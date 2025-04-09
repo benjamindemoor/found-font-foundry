@@ -1,37 +1,72 @@
 # Found Font Foundry
 
-A minimalist photo-focused website that displays content from the Are.na channel "Found Font Foundry" by Benjamin Ikoma.
+A growing collection of fonts discovered in the wild and everywhere in between.
+
+## About
+
+Found Font Foundry is a curated collection of fonts spotted in the real world. This project showcases these found typographic specimens and allows others to contribute their discoveries via Are.na.
 
 ## Features
 
-- Fetches and displays images from the Are.na channel
-- Minimalist UI focused on the content
-- Responsive design
-- Clean typography with system fonts
-- Simple and intuitive navigation
+- Responsive layout with alternating image positions
+- Random offset system for visually interesting layout
+- Integration with Are.na API for content management
+- Clean, minimalist design focused on typography
+- Built with Next.js and Alte Haas Grotesk font
 
 ## Getting Started
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Prerequisites
 
-2. Run the development server:
-   ```bash
-   npm run dev
-   ```
+- Node.js 18+ and npm
 
-3. Open [http://localhost:3000](http://localhost:3000) or [http://localhost:3001](http://localhost:3001) in your browser.
+### Installation
 
-## Tech Stack
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/found-font-foundry.git
+cd found-font-foundry
+```
 
-- Next.js 15
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Run the development server
+```bash
+npm run dev
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Technology Stack
+
+- Next.js 15.2+
+- React 18+
 - TypeScript
 - Tailwind CSS
-- Are.na API
+- Axios for API requests
 
-## Design
+## Project Structure
+
+- `/src/app` - Main application code
+- `/public/fonts` - Font files
+- `/public` - Static assets
+
+## Contributing
+
+Add your own font discoveries via [Are.na](https://www.are.na/benjamin-ikoma/found-font-foundry).
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- A project by [Benjamin Ikoma](http://benjaminikoma.be/)
+- Font: Alte Haas Grotesk
+
 
 The website follows a minimalist design approach with:
 - White background

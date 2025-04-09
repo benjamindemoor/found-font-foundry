@@ -127,7 +127,7 @@ export default function Home() {
           <div className="text-center py-8">No images found</div>
         ) : (
           <div className="relative">
-            {blocks.map((block) => {
+            {[...blocks].reverse().map((block) => {
               const offset = offsets[block.id]?.offset || 0;
               const username = block.user?.username || 'anonymous';
               const date = formatDate(block.updated_at);

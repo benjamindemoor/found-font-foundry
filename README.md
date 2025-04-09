@@ -24,7 +24,7 @@ Found Font Foundry is a curated collection of fonts spotted in the real world. T
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/found-font-foundry.git
+git clone https://github.com/benjamindemoor/found-font-foundry.git
 cd found-font-foundry
 ```
 

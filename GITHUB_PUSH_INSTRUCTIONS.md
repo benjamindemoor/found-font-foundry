@@ -14,7 +14,7 @@
 ### Method 1: SSH (If You Have SSH Set Up)
 
 ```bash
-git remote set-url origin git@github.com:<your-username>/found-font-foundry.git
+git remote set-url origin git@github.com:benjamindemoor/found-font-foundry.git
 git push -u origin main
 ```
 
@@ -29,7 +29,7 @@ git push -u origin main
 
 2. Push with your username and the token as password:
 ```bash
-git remote set-url origin https://github.com/<your-username>/found-font-foundry.git
+git remote set-url origin https://github.com/benjamindemoor/found-font-foundry.git
 git push -u origin main
 ```
 When prompted, enter your GitHub username and use the personal access token as the password.
@@ -45,6 +45,4 @@ gh auth login
 
 # Create a repository and push
 gh repo create found-font-foundry --private --source=. --remote=origin --push
-```
-
-Replace `<your-username>` with your actual GitHub username in all commands. 
+``` 

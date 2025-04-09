@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import './image-placeholder.css';
 
 interface ArenaResponse {
   contents: any[];
@@ -12,6 +13,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offsets, setOffsets] = useState<{[key: string]: {offset: number}}>({});
+  const [imageStates, setImageStates] = useState<{[key: string]: {loaded: boolean, width: number, height: number}}>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,7 +27,6 @@ export default function Home() {
         let offsetValues = [0, 10, 20, 30, 40, 50];
         
         // Occasionally shuffle or swap some values to create variations
-        // This creates sequences like: 0%, 20%, 10%, 30%, 50%, 40% or 10%, 0%, 10%, 20%, 40%, 50%
         const shouldShuffle = Math.random() < 0.5;
         
         if (shouldShuffle) {
@@ -51,15 +52,24 @@ export default function Home() {
         }
         
         const offsetsMap: {[key: string]: {offset: number}} = {};
+        const initialImageStates: {[key: string]: {loaded: boolean, width: number, height: number}} = {};
         
         contents.forEach((block, index) => {
           // Get offset from the sequence, cycling through the array
           const offsetIndex = index % offsetValues.length;
           const offset = offsetValues[offsetIndex];
           offsetsMap[block.id] = { offset };
+          
+          // Initialize image state
+          initialImageStates[block.id] = { 
+            loaded: false, 
+            width: block.image?.display?.width || 800, 
+            height: block.image?.display?.height || 600 
+          };
         });
         
         setOffsets(offsetsMap);
+        setImageStates(initialImageStates);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load images. Please try again later.');
@@ -80,6 +90,20 @@ export default function Home() {
       month: 'long',
       day: 'numeric'
     }).toLowerCase();
+  };
+  
+  // Function to handle image load
+  const handleImageLoad = (blockId: string, e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    setImageStates(prev => ({
+      ...prev,
+      [blockId]: {
+        ...prev[blockId],
+        loaded: true,
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      }
+    }));
   };
 
   return (
@@ -103,10 +127,11 @@ export default function Home() {
           <div className="text-center py-8">No images found</div>
         ) : (
           <div className="relative">
-            {blocks.map((block, index) => {
+            {blocks.map((block) => {
               const offset = offsets[block.id]?.offset || 0;
               const username = block.user?.username || 'anonymous';
               const date = formatDate(block.updated_at);
+              const imageState = imageStates[block.id] || { loaded: false, width: 800, height: 600 };
               
               return (
                 <div 
@@ -118,11 +143,19 @@ export default function Home() {
                   }}
                 >
                   {block.image && (
-                    <div className="mb-2">
+                    <div className="mb-2 img-container">
                       <img 
                         src={block.image.display?.url || block.image.original?.url} 
                         alt={'Found font'} 
-                        className="w-full h-auto"
+                        className={`w-full h-auto image-fade ${imageState.loaded ? 'loaded' : ''}`}
+                        onLoad={(e) => handleImageLoad(block.id, e)}
+                      />
+                      <div 
+                        className="placeholder"
+                        style={{
+                          paddingBottom: `${(imageState.height / imageState.width) * 100}%`,
+                          backgroundColor: '#333'
+                        }}
                       />
                     </div>
                   )}

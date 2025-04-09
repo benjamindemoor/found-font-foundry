@@ -115,7 +115,7 @@ export default function Home() {
           </h1>
           <p className="text-base" style={{ marginBottom: '2em' }}>
             A growing collection of fonts discovered in the wild and everywhere in between.<br />
-            Add your own discoveries via <a href="https://www.are.na/benjamin-ikoma/found-font-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a>.
+            Add your own finds via <a href="https://www.are.na/benjamin-ikoma/found-font-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a>.
           </p>
         </header>
 

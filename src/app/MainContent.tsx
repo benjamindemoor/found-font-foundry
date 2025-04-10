@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import axios from 'axios';
-import './image-placeholder.css';
+import './fixed-image.css';
 import './fonts.css';
 import { useRouter } from 'next/navigation';
 
@@ -514,12 +514,6 @@ export default function MainContent({ initialPage }: MainContentProps) {
                           alt={'Found font'} 
                           className="image-fade"
                           loading="lazy"
-                        />
-                        <div 
-                          className="placeholder"
-                          style={{
-                            paddingBottom: `${(block.image.display?.height / block.image.display?.width || 0.75) * 100}%`
-                          }}
                         />
                       </div>
                     )}

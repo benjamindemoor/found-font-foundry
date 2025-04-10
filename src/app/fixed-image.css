@@ -1,0 +1,35 @@
+.img-container {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background-color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+/* Hide placeholder */
+.placeholder {
+  display: none;
+}
+
+/* Simple image styling */
+.image-fade {
+  opacity: 1;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Responsive image container for mobile */
+@media (max-width: 640px) {
+  .img-container {
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  /* Adjust image blocks width and offset on mobile */
+  .image-block {
+    width: 100% !important; /* Full width images on mobile */
+    margin-left: 0 !important; /* Override the offset on mobile */
+  }
+} 

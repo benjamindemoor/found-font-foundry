@@ -2,8 +2,8 @@
   <rect width="1200" height="630" fill="#ffffff" />
   <rect x="50" y="50" width="1100" height="530" rx="15" fill="#000000" />
   
-  <!-- Large smiley face -->
-  <text x="600" y="280" font-family="Arial, sans-serif" font-size="200" text-anchor="middle" fill="#ffffff">☻</text>
+  <!-- Large eyes emoji -->
+  <text x="600" y="280" font-family="Arial, sans-serif" font-size="180" text-anchor="middle" fill="#ffffff">👀</text>
   
   <!-- Title text -->
   <text x="600" y="450" font-family="Georgia, serif" font-size="72" text-anchor="middle" fill="#ffffff">Found Fonts Foundry</text>

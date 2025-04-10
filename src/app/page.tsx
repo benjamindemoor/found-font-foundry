@@ -101,11 +101,79 @@ export default function Home() {
     }
   };
   
-  const loadMoreBlocks = useCallback(() => {
-    if (!loadingMore && currentPage < totalPages) {
-      fetchData(currentPage + 1);
+  const loadPage = (page: number) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage && !loadingMore) {
+      window.scrollTo(0, 0);
+      fetchData(page);
     }
-  }, [currentPage, totalPages, loadingMore]);
+  };
+
+  // Helper function to render pagination controls
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    
+    const pageNumbers: number[] = [];
+    
+    // Always show first page
+    pageNumbers.push(1);
+    
+    // Show current page and pages around it
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(currentPage + 1, totalPages - 1); i++) {
+      if (!pageNumbers.includes(i)) {
+        pageNumbers.push(i);
+      }
+    }
+    
+    // Always show last page if there are more than 1 pages
+    if (totalPages > 1) {
+      pageNumbers.push(totalPages);
+    }
+    
+    // Sort and add ellipses
+    pageNumbers.sort((a, b) => a - b);
+    const paginationItems: React.ReactNode[] = [];
+    
+    for (let i = 0; i < pageNumbers.length; i++) {
+      // Add ellipsis if there's a gap
+      if (i > 0 && pageNumbers[i] - pageNumbers[i - 1] > 1) {
+        paginationItems.push(
+          <span key={`ellipsis-${i}`} className="pagination-ellipsis">...</span>
+        );
+      }
+      
+      // Add page number
+      paginationItems.push(
+        <button
+          key={pageNumbers[i]}
+          onClick={() => loadPage(pageNumbers[i])}
+          className={`pagination-item ${pageNumbers[i] === currentPage ? 'active' : ''}`}
+          disabled={pageNumbers[i] === currentPage || loadingMore}
+        >
+          {pageNumbers[i]}
+        </button>
+      );
+    }
+    
+    return (
+      <div className="pagination">
+        <button 
+          className="pagination-arrow" 
+          onClick={() => loadPage(currentPage - 1)}
+          disabled={currentPage === 1 || loadingMore}
+        >
+          &larr;
+        </button>
+        {paginationItems}
+        <button 
+          className="pagination-arrow" 
+          onClick={() => loadPage(currentPage + 1)}
+          disabled={currentPage === totalPages || loadingMore}
+        >
+          &rarr;
+        </button>
+      </div>
+    );
+  };
 
   useEffect(() => {
     fetchData();
@@ -215,20 +283,15 @@ export default function Home() {
               );
             })}
             
-            {loadingMore && (
-              <div className="w-full text-center py-8">
-                <p className="text-gray-400">Loading more images...</p>
-              </div>
-            )}
-            
-            {!loadingMore && currentPage < totalPages && (
-              <div className="w-full text-center pt-4 pb-16">
-                <button 
-                  onClick={loadMoreBlocks}
-                  className="bg-transparent border border-gray-500 text-gray-300 px-4 py-2 rounded-sm hover:bg-gray-800 transition-colors"
-                >
-                  Load more images
-                </button>
+            {!loading && blocks.length > 0 && (
+              <div className="pagination-container">
+                {renderPagination()}
+                
+                {loadingMore && (
+                  <div className="loading-indicator">
+                    <p>Loading page {currentPage}...</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

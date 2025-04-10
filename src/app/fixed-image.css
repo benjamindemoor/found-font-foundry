@@ -19,6 +19,21 @@
   display: block;
 }
 
+/* Loading indicator for infinite scroll */
+.loading-more {
+  padding: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+  text-align: center;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
 /* Responsive image container for mobile */
 @media (max-width: 640px) {
   .img-container {

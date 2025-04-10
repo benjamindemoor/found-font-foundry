@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import axios from 'axios';
 import './fixed-image.css';
 import './fonts.css';
@@ -53,33 +53,34 @@ interface MainContentProps {
 export default function MainContent({ initialPage }: MainContentProps) {
   const router = useRouter();
   
+  // Modify state for infinite scroll
   const [blocks, setBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offsets, setOffsets] = useState<{[key: string]: {offset: number}}>({});
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [perPage] = useState(30); // Updated to show 30 posts per page
   const [totalCount, setTotalCount] = useState(0);
   
   // State for randomly selected font
   const [randomFont, setRandomFont] = useState<string>('Cooper Black');
   
-  // Use passed in initialPage value, enforcing a valid number
-  const [currentPage, setCurrentPage] = useState(() => {
-    const page = Number(initialPage);
-    return !isNaN(page) && page > 0 ? page : 1;
-  });
-  
-  // Reference for data freshness
+  // Reference for data freshness and observers
   const lastFetchRef = useRef<number>(0);
   const isFetchingRef = useRef<boolean>(false);
-  const pageChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  
+  // Reference to track already loaded pages to avoid duplicates
+  const loadedPagesRef = useRef<Set<number>>(new Set([1]));
 
-  // Fetch data on component mount and page changes
+  // Fetch initial data on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
       await fetchChannelInfo();
-      await fetchData(currentPage);
+      await fetchData(1);
     };
 
     fetchInitialData();
@@ -90,61 +91,68 @@ export default function MainContent({ initialPage }: MainContentProps) {
       if (now - lastFetchRef.current > CACHE_DURATION && !isFetchingRef.current) {
         console.log('Refreshing data after cache expiration...');
         fetchChannelInfo(true);
-        fetchData(currentPage, true);
       }
     }, 60000); // Check every minute
 
     return () => {
       clearInterval(intervalId);
-      // Clear any pending timeouts
-      if (pageChangeTimeoutRef.current) {
-        clearTimeout(pageChangeTimeoutRef.current);
+      // Cleanup observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
     };
   }, []);
 
-  // Fetch data when page changes
-  useEffect(() => {
-    // Clear any existing timeout to prevent race conditions
-    if (pageChangeTimeoutRef.current) {
-      clearTimeout(pageChangeTimeoutRef.current);
+  // Set up intersection observer for infinite scroll
+  const lastBlockElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMore) return;
+    
+    if (observerRef.current) {
+      observerRef.current.disconnect();
     }
     
-    // Set loading state first
-    setLoading(true);
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore) {
+        console.log('Loading more content, current page:', currentPage);
+        loadMoreItems();
+      }
+    }, {
+      rootMargin: '300px', // Start loading when within 300px of the bottom
+    });
     
-    // Reset blocks so no images from previous page are shown
-    setBlocks([]);
-    
-    // Fetch data for the new page
-    fetchData(currentPage);
-    
-    // Update URL
-    updateBrowserUrl(currentPage);
-  }, [currentPage]);
-
-  // Add effect to scroll to top when page changes - immediate scroll
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'instant'
-      });
+    if (node) {
+      observerRef.current.observe(node);
     }
-  }, [currentPage]);
+  }, [loadingMore, hasMore, currentPage]);
 
-  // Add effect to handle body overflow during loading
+  // Function to load more items when user scrolls
+  const loadMoreItems = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    const nextPage = currentPage + 1;
+    
+    // Skip if we've already loaded this page
+    if (loadedPagesRef.current.has(nextPage)) return;
+    
+    setLoadingMore(true);
+    
+    try {
+      await fetchData(nextPage, false, true); // The third param indicates this is for infinite scroll
+      loadedPagesRef.current.add(nextPage);
+      setCurrentPage(nextPage);
+    } catch (error) {
+      console.error('Error loading more items:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Add effect to handle body overflow during initial loading
   useEffect(() => {
     if (loading) {
       document.body.classList.add('overflow-hidden');
     } else {
       document.body.classList.remove('overflow-hidden');
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'instant'
-      });
     }
   }, [loading]);
 
@@ -181,10 +189,10 @@ export default function MainContent({ initialPage }: MainContentProps) {
     return fonts[randomIndex];
   };
 
-  // Set random font on initial load and when page changes
+  // Set random font on initial load
   useEffect(() => {
     setRandomFont(getRandomFont());
-  }, [currentPage]);
+  }, []);
 
   // Server-side fetch with caching
   const fetchFromServerWithCache = async <T,>(url: string, forceRefresh = false): Promise<T> => {
@@ -240,18 +248,13 @@ export default function MainContent({ initialPage }: MainContentProps) {
         const totalItems = channelData.contents_count || channelData.length || 49; // Fallback to 49 if API doesn't return correct value
         setTotalCount(totalItems);
         
-        // Calculate total pages based on accurate item count
-        const calculatedTotalPages = Math.ceil(totalItems / perPage);
-        setTotalPages(calculatedTotalPages > 0 ? calculatedTotalPages : 1); // Ensure at least 1 page
-        
-        console.log(`Total items in channel: ${totalItems}, Total pages: ${calculatedTotalPages}`);
+        console.log(`Total items in channel: ${totalItems}`);
       }
     } catch (error) {
       console.error('Error fetching channel info:', error);
       
       // If we can't fetch channel info, set default values
       setTotalCount(49); // Use the known value of 49 as fallback
-      setTotalPages(Math.ceil(49 / perPage));
       
     } finally {
       isFetchingRef.current = false;
@@ -259,10 +262,14 @@ export default function MainContent({ initialPage }: MainContentProps) {
   };
 
   // Fetch page data with server-side caching
-  const fetchData = async (page: number, forceRefresh = false) => {
+  const fetchData = async (page: number, forceRefresh = false, isLoadMore = false) => {
     try {
-      console.log(`Fetching data for page ${page}, force refresh: ${forceRefresh}`);
-      // setLoading(true) is now set by the page change effect
+      console.log(`Fetching data for page ${page}, force refresh: ${forceRefresh}, loadMore: ${isLoadMore}`);
+      
+      if (!isLoadMore) {
+        setLoading(true);
+      }
+      
       setError(null); // Clear any previous errors
       isFetchingRef.current = true;
       
@@ -282,8 +289,14 @@ export default function MainContent({ initialPage }: MainContentProps) {
       
       console.log(`Received data for page ${page} with ${responseData.contents.length} items`);
       
+      // Check if this is the last page
+      const totalPages = responseData.total_pages || 1;
+      if (page >= totalPages) {
+        setHasMore(false);
+      }
+      
       // Process the data
-      processArenaData(responseData);
+      processArenaData(responseData, isLoadMore);
       
     } catch (err: unknown) {
       console.error(`Error fetching data for page ${page}:`, err);
@@ -315,14 +328,14 @@ export default function MainContent({ initialPage }: MainContentProps) {
       
       setError(errorMessage);
       
-      // Fall back to empty content but don't crash the app
-      setBlocks([]);
-      
-      // Ensure loading is set to false even on error
-      if (pageChangeTimeoutRef.current) {
-        clearTimeout(pageChangeTimeoutRef.current);
+      // Don't clear blocks if this was a loadMore operation
+      if (!isLoadMore) {
+        setBlocks([]);
       }
+      
+      // Turn off loading states
       setLoading(false);
+      setLoadingMore(false);
       
     } finally {
       isFetchingRef.current = false;
@@ -330,7 +343,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
   };
 
   // Process Arena data and update state
-  const processArenaData = (data: ArenaResponse) => {
+  const processArenaData = (data: ArenaResponse, isLoadMore = false) => {
     // Extract pagination metadata from response
     let totalItems = data.length || totalCount;
     
@@ -341,23 +354,13 @@ export default function MainContent({ initialPage }: MainContentProps) {
     
     setTotalCount(totalItems);
     
-    // Calculate total pages, ensure we have at least 1 page
-    const calculatedTotalPages = Math.max(1, Math.ceil(totalItems / perPage));
-    setTotalPages(calculatedTotalPages);
-    
-    console.log(`Processing data: Total items: ${totalItems}, Pages: ${calculatedTotalPages}, Current page: ${currentPage}`);
-    
     const contents = data.contents || [];
     
     if (contents.length === 0) {
       console.warn('No contents found for page:', currentPage);
-      
-      // If we're on a page that doesn't exist, go to page 1
-      if (currentPage > 1 && calculatedTotalPages < currentPage) {
-        console.warn('Current page exceeds total pages, redirecting to page 1');
-        setCurrentPage(1);
-        return;
-      }
+      setLoading(false);
+      setLoadingMore(false);
+      return;
     }
     
     // Base offsets: 0%, 10%, 20%, 30%, 40%, 50%
@@ -388,41 +391,29 @@ export default function MainContent({ initialPage }: MainContentProps) {
       }
     }
     
-    const offsetsMap: {[key: string]: {offset: number}} = {};
+    const newOffsets: {[key: string]: {offset: number}} = {};
     
     contents.forEach((block, index) => {
       // Get offset from the sequence, cycling through the array
       const offsetIndex = index % offsetValues.length;
       const offset = offsetValues[offsetIndex];
-      offsetsMap[block.id] = { offset };
+      newOffsets[block.id] = { offset };
     });
     
-    // Set offsets
-    setOffsets(offsetsMap);
+    // Update offsets, merging with existing ones if loading more
+    setOffsets(prev => ({
+      ...prev,
+      ...newOffsets
+    }));
     
-    // Then update the blocks data
-    setBlocks(contents);
+    // Then update the blocks data - append if loading more, replace if initial load
+    setBlocks(prev => isLoadMore ? [...prev, ...contents] : contents);
     
-    // Finally turn off loading state after a short delay
-    pageChangeTimeoutRef.current = setTimeout(() => {
+    // Turn off loading states after a short delay
+    setTimeout(() => {
       setLoading(false);
+      setLoadingMore(false);
     }, 300);
-  };
-
-  // Helper to navigate to the previous page
-  const handlePrevPage = () => {
-    if (currentPage > 1 && !loading) {
-      // Simply update the page - the effect will handle cleanup
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  // Helper to navigate to the next page
-  const handleNextPage = () => {
-    if (currentPage < totalPages && !loading) {
-      // Simply update the page - the effect will handle cleanup
-      setCurrentPage(currentPage + 1);
-    }
   };
 
   // Helper function to format date
@@ -434,23 +425,6 @@ export default function MainContent({ initialPage }: MainContentProps) {
       month: 'long',
       day: 'numeric'
     }).toLowerCase();
-  };
-  
-  // Function to update browser URL without causing navigation
-  const updateBrowserUrl = (page: number) => {
-    if (typeof window === 'undefined') return;
-    
-    const newPath = page === 1 ? '/' : `/page/${page}`;
-    
-    // Only update if the path has changed
-    if (window.location.pathname !== newPath) {
-      // Update URL without triggering navigation
-      window.history.replaceState(
-        { page }, 
-        '', 
-        newPath
-      );
-    }
   };
 
   return (
@@ -487,20 +461,24 @@ export default function MainContent({ initialPage }: MainContentProps) {
 
         {error ? (
           <div className="text-center py-8 text-red-500">{error}</div>
-        ) : blocks.length === 0 ? (
+        ) : blocks.length === 0 && !loading ? (
           <div className="text-center py-8">No images found</div>
         ) : (
           <>            
             <div className="relative">
-              {blocks.map((block) => {
+              {blocks.map((block, index) => {
                 const offset = offsets[block.id]?.offset || 0;
                 const username = block.user?.username || 'anonymous';
                 const date = formatDate(block.updated_at);
+                
+                // Add ref to last item for infinite scroll
+                const isLastItem = index === blocks.length - 1;
                 
                 return (
                   <div 
                     key={block.id} 
                     className="image-block"
+                    ref={isLastItem ? lastBlockElementRef : null}
                     style={{
                       marginLeft: `${offset}%`,
                       width: '50%',
@@ -525,35 +503,21 @@ export default function MainContent({ initialPage }: MainContentProps) {
               })}
             </div>
             
-            {/* Pagination controls - always show for testing */}
-            <div className="pagination">
-              <div className="flex flex-col items-center mt-8">
-                <div className="pagination-buttons flex items-center justify-between w-full">
-                  <p className="text-sm text-gray-600" style={{ margin: 0 }}>
-                    A project by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" className="underline">Benjamin Ikoma</a>
-                  </p>
-                  <div className="flex items-center gap-6">
-                    <button 
-                      onClick={handlePrevPage} 
-                      disabled={currentPage === 1 || loading}
-                      className={`pagination-btn ${(currentPage === 1 || loading) ? 'opacity-50 cursor-not-allowed' : 'underline'}`}
-                    >
-                      Previous
-                    </button>
-                    <span className="pagination-info text-gray-600">
-                      {currentPage}/{totalPages}
-                    </span>
-                    <button 
-                      onClick={handleNextPage} 
-                      disabled={currentPage === totalPages || loading}
-                      className={`pagination-btn ${(currentPage === totalPages || loading) ? 'opacity-50 cursor-not-allowed' : 'underline'}`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div className="w-32"></div> {/* Spacer for balance */}
-                </div>
+            {/* Loading indicator for infinite scroll */}
+            {loadingMore && (
+              <div className="text-center py-8">
+                <div className="loading-more">Loading more...</div>
               </div>
+            )}
+            
+            {/* This div serves as a sentinel for the infinite scroll */}
+            <div ref={loadMoreRef} className="h-10" />
+            
+            {/* Footer */}
+            <div className="mt-12 pt-4 border-t text-center text-sm text-gray-600">
+              <p>
+                A project by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" className="underline">Benjamin Ikoma</a>
+              </p>
             </div>
           </>
         )}

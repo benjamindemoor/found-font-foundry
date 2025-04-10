@@ -7,6 +7,7 @@ interface PageProps {
   params: {
     page: string;
   };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 export default function Page({ params }: PageProps) {

@@ -31,6 +31,10 @@ h1 {
   font-size: 5em;
 }
 
+.text-4em {
+  font-size: 4em;
+}
+
 img {
   max-width: 100%;
   height: auto;

@@ -29,4 +29,28 @@
 /* When image is loaded, hide the placeholder */
 .image-fade.loaded ~ .placeholder {
   opacity: 0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .text-4em {
+    font-size: 3em;
+  }
+  
+  .block-container {
+    width: 90% !important;
+    margin-left: 0 !important;
+    margin-bottom: 2em !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-4em {
+    font-size: 2.5em;
+    line-height: 1.1;
+  }
+  
+  .block-container {
+    width: 100% !important;
+  }
 } 

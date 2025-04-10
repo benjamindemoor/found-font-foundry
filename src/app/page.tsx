@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './image-placeholder.css';
 
@@ -19,22 +19,8 @@ export default function Home() {
   const [offsets, setOffsets] = useState<{[key: string]: {offset: number}}>({});
   const [imageStates, setImageStates] = useState<{[key: string]: {loaded: boolean, width: number, height: number}}>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-  
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastBlockRef = useCallback((node: HTMLDivElement | null) => {
-    if (loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMoreBlocks();
-      }
-    });
-    
-    if (node) observer.current.observe(node);
-  }, [loadingMore, hasMore]);
   
   // Function to apply offsets to blocks
   const applyOffsets = (newBlocks: any[]) => {
@@ -105,7 +91,7 @@ export default function Home() {
       
       setBlocks(prev => page === 1 ? processedBlocks : [...prev, ...processedBlocks]);
       setCurrentPage(data.current_page);
-      setHasMore(data.current_page < data.total_pages);
+      setTotalPages(data.total_pages);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load images. Please try again later.');
@@ -115,11 +101,11 @@ export default function Home() {
     }
   };
   
-  const loadMoreBlocks = () => {
-    if (!loadingMore && hasMore) {
+  const loadMoreBlocks = useCallback(() => {
+    if (!loadingMore && currentPage < totalPages) {
       fetchData(currentPage + 1);
     }
-  };
+  }, [currentPage, totalPages, loadingMore]);
 
   useEffect(() => {
     fetchData();
@@ -151,13 +137,28 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-6 pb-16">
-      <div className="max-w-5xl mx-auto" style={{ marginLeft: '2em', marginRight: '2em', marginTop: '1.5em' }}>
-        <header className="mb-12">
-          <h1 className="text-5em font-normal" style={{ marginBottom: '0em', marginTop: 0 }}>
+    <main className="min-h-screen bg-black text-white px-0 py-6 pb-16">
+      <div 
+        className="mx-auto relative" 
+        style={{ 
+          marginLeft: 'clamp(1em, 5vw, 2em)', 
+          marginRight: 'clamp(1em, 5vw, 2em)', 
+          marginTop: 'clamp(1em, 3vw, 1.5em)',
+          maxWidth: '1200px'
+        }}
+      >
+        <header className="mb-8 md:mb-12">
+          <h1 
+            className="text-4em md:text-5em font-normal" 
+            style={{ 
+              marginBottom: '0em', 
+              marginTop: 0, 
+              lineHeight: 'clamp(0.95, 0.95, 1.1)' 
+            }}
+          >
             Found Font Foundry
           </h1>
-          <p className="text-base" style={{ marginBottom: '2em' }}>
+          <p className="text-base" style={{ marginBottom: 'clamp(1em, 5vw, 2em)' }}>
             A growing collection of fonts discovered in the wild and everywhere in between.<br />
             Add your own finds via <a href="https://www.are.na/benjamin-ikoma/found-font-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a>.
           </p>
@@ -171,24 +172,24 @@ export default function Home() {
           <div className="text-center py-8">No images found</div>
         ) : (
           <div className="relative">
-            {[...blocks].reverse().map((block, index) => {
+            {[...blocks].reverse().map((block) => {
               const offset = offsets[block.id]?.offset || 0;
               const username = block.user?.username || 'anonymous';
               const date = formatDate(block.updated_at);
               const imageState = imageStates[block.id] || { loaded: false, width: 800, height: 600 };
               
-              // Add ref to the last item for infinite scroll
-              const isLastItem = index === blocks.length - 1;
+              // Calculate offset for mobile (smaller or no offset)
+              const mobileOffset = Math.min(offset, 25); 
               
               return (
                 <div 
-                  key={block.id} 
-                  ref={isLastItem ? lastBlockRef : null}
+                  key={block.id}
                   style={{
-                    marginLeft: `${offset}%`,
-                    width: '50%',
-                    marginBottom: '2em'
+                    marginLeft: `clamp(0%, ${mobileOffset}%, ${offset}%)`,
+                    width: `clamp(85%, calc(100% - ${mobileOffset}% * 2), 50%)`,
+                    marginBottom: 'clamp(1.5em, 4vw, 2em)'
                   }}
+                  className="block-container"
                 >
                   {block.image && (
                     <div className="mb-2 img-container">
@@ -219,10 +220,27 @@ export default function Home() {
                 <p className="text-gray-400">Loading more images...</p>
               </div>
             )}
+            
+            {!loadingMore && currentPage < totalPages && (
+              <div className="w-full text-center pt-4 pb-16">
+                <button 
+                  onClick={loadMoreBlocks}
+                  className="bg-transparent border border-gray-500 text-gray-300 px-4 py-2 rounded-sm hover:bg-gray-800 transition-colors"
+                >
+                  Load more images
+                </button>
+              </div>
+            )}
           </div>
         )}
         
-        <div className="fixed-bottom-right">
+        <div 
+          className="fixed-bottom-right" 
+          style={{ 
+            bottom: 'clamp(0.75em, 3vw, 2em)', 
+            right: 'clamp(0.75em, 3vw, 2em)' 
+          }}
+        >
           <p className="text-sm text-gray-400 mix-blend-difference" style={{ margin: 0 }}>
             A project by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" className="underline">Benjamin Ikoma</a>
           </p>

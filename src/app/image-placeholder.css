@@ -2,6 +2,7 @@
   position: relative;
   width: 100%;
   overflow: hidden;
+  background-color: #ffffff;
 }
 
 .placeholder {
@@ -11,28 +12,18 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1;
-  transition: opacity 0.3s ease;
 }
 
 .image-fade {
   opacity: 0;
-  transition: opacity 0.3s ease;
-  position: relative;
-  z-index: 2;
-  will-change: opacity;
-  /* Add visibility property for better transition */
-  visibility: hidden;
+  transition: opacity 0.5s ease-in;
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .image-fade.loaded {
   opacity: 1;
-  visibility: visible;
-}
-
-/* When image is loaded, hide the placeholder */
-.image-fade.loaded ~ .placeholder {
-  opacity: 0;
 }
 
 /* Responsive image container for mobile */

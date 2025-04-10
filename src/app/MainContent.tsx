@@ -111,20 +111,20 @@ export default function MainContent({ initialPage }: MainContentProps) {
       clearTimeout(pageChangeTimeoutRef.current);
     }
     
-    // Reset image states when changing pages - this ensures we start fresh
-    setImageStates({});
-    
-    // Set loading first - immediate
+    // Set loading state first
     setLoading(true);
     
-    // Wait a tiny bit before fetching new data to ensure UI updates
-    setTimeout(() => {
-      // Then fetch data
-      fetchData(currentPage);
-      
-      // Update the URL to match the current page
-      updateBrowserUrl(currentPage);
-    }, 10);
+    // Reset image states to empty - not just an empty object
+    setImageStates({});
+    
+    // Also reset blocks so no images from previous page are shown
+    setBlocks([]);
+    
+    // Fetch data for the new page
+    fetchData(currentPage);
+    
+    // Update URL
+    updateBrowserUrl(currentPage);
   }, [currentPage]);
 
   // Add effect to scroll to top when page changes - immediate scroll
@@ -401,61 +401,43 @@ export default function MainContent({ initialPage }: MainContentProps) {
       const offset = offsetValues[offsetIndex];
       offsetsMap[block.id] = { offset };
       
-      // Initialize image state
+      // Initialize image state - use image dimensions if available
+      const width = block.image?.display?.width || block.image?.original?.width || 800;
+      const height = block.image?.display?.height || block.image?.original?.height || 600;
+      
       initialImageStates[block.id] = { 
         loaded: false, 
-        width: block.image?.display?.width || 800, 
-        height: block.image?.display?.height || 600 
+        width, 
+        height
       };
     });
     
+    // First set offsets and image states
     setOffsets(offsetsMap);
     setImageStates(initialImageStates);
     
-    // Set blocks after all other state is set
+    // Then update the blocks data
     setBlocks(contents);
     
-    // Minor delay to ensure smooth transition - improved timing to allow images to begin loading
+    // Finally turn off loading state after a short delay
     pageChangeTimeoutRef.current = setTimeout(() => {
       setLoading(false);
-    }, 400); // Reduced from 800ms to 400ms for faster page transitions
+    }, 300);
   };
 
   // Helper to navigate to the previous page
   const handlePrevPage = () => {
     if (currentPage > 1 && !loading) {
-      // Clear any existing timeout
-      if (pageChangeTimeoutRef.current) {
-        clearTimeout(pageChangeTimeoutRef.current);
-      }
-      
-      // Force clear any existing loaded images before navigating
-      document.querySelectorAll('.image-fade').forEach(img => {
-        img.classList.remove('loaded');
-      });
-      
-      // Update page immediately
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
+      // Simply update the page - the effect will handle cleanup
+      setCurrentPage(currentPage - 1);
     }
   };
 
   // Helper to navigate to the next page
   const handleNextPage = () => {
     if (currentPage < totalPages && !loading) {
-      // Clear any existing timeout
-      if (pageChangeTimeoutRef.current) {
-        clearTimeout(pageChangeTimeoutRef.current);
-      }
-      
-      // Force clear any existing loaded images before navigating
-      document.querySelectorAll('.image-fade').forEach(img => {
-        img.classList.remove('loaded');
-      });
-      
-      // Update page immediately 
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
+      // Simply update the page - the effect will handle cleanup
+      setCurrentPage(currentPage + 1);
     }
   };
 
@@ -470,19 +452,17 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }).toLowerCase();
   };
   
-  // Function to handle image load
+  // For the image loading handler
   const handleImageLoad = (blockId: string, e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     
-    // Mark image as loaded immediately without timeout
-    // The CSS transition will handle the smooth fade-in
+    // Set loaded state directly - no fancy logic, just mark it as loaded
     setImageStates(prev => ({
       ...prev,
       [blockId]: {
-        ...prev[blockId],
         loaded: true,
-        width: img.naturalWidth,
-        height: img.naturalHeight
+        width: img.naturalWidth || 800,
+        height: img.naturalHeight || 600
       }
     }));
   };
@@ -564,15 +544,14 @@ export default function MainContent({ initialPage }: MainContentProps) {
                         <img 
                           src={block.image.display?.url || block.image.original?.url} 
                           alt={'Found font'} 
-                          className={`w-full h-auto image-fade ${imageState.loaded ? 'loaded' : ''}`}
+                          className={`image-fade ${imageState.loaded ? 'loaded' : ''}`}
                           onLoad={(e) => handleImageLoad(block.id, e)}
                           loading="lazy"
                         />
                         <div 
                           className="placeholder"
                           style={{
-                            paddingBottom: `${(imageState.height / imageState.width) * 100}%`,
-                            backgroundColor: '#ffffff'
+                            paddingBottom: `${(imageState.height / imageState.width) * 100}%`
                           }}
                         />
                       </div>

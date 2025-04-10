@@ -1,9 +1,8 @@
 import { Suspense } from 'react';
 import MainContent from './MainContent';
 
-// For server components in Next.js 15, we need to declare it
-// to receive searchParams
-export default function Home({
+// Define the page as an async server component for Next.js 15 compatibility
+export default async function Home({
   searchParams = {},
 }: {
   searchParams?: { [key: string]: string | string[] | undefined };

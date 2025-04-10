@@ -119,6 +119,9 @@ export default function MainContent({ initialPage }: MainContentProps) {
     
     // Then fetch data - after a short delay to ensure loading state is applied
     fetchData(currentPage);
+    
+    // Update the URL to match the current page
+    updateBrowserUrl(currentPage);
   }, [currentPage]);
 
   // Add effect to scroll to top when page changes - immediate scroll
@@ -424,7 +427,8 @@ export default function MainContent({ initialPage }: MainContentProps) {
       }
       
       // Update page immediately
-      setCurrentPage(prevPage => prevPage - 1);
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
     }
   };
 
@@ -437,7 +441,8 @@ export default function MainContent({ initialPage }: MainContentProps) {
       }
       
       // Update page immediately 
-      setCurrentPage(prevPage => prevPage + 1);
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
     }
   };
 
@@ -468,6 +473,23 @@ export default function MainContent({ initialPage }: MainContentProps) {
         }
       }));
     }, 50); // Small delay for smoother transition
+  };
+
+  // Function to update browser URL without causing navigation
+  const updateBrowserUrl = (page: number) => {
+    if (typeof window === 'undefined') return;
+    
+    const newPath = page === 1 ? '/' : `/page/${page}`;
+    
+    // Only update if the path has changed
+    if (window.location.pathname !== newPath) {
+      // Update URL without triggering navigation
+      window.history.replaceState(
+        { page }, 
+        '', 
+        newPath
+      );
+    }
   };
 
   return (

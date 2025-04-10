@@ -5,11 +5,12 @@ import MainContent from './MainContent';
 
 interface ClientPageProps {
   searchParams?: { [key: string]: string | string[] | undefined };
+  initialPage?: number;
 }
 
-export default function ClientPage({ searchParams = {} }: ClientPageProps) {
-  // Set initialPage based on searchParams or default to 1
-  const [initialPage, setInitialPage] = useState(1);
+export default function ClientPage({ searchParams = {}, initialPage = 1 }: ClientPageProps) {
+  // Set initialPage based on props or searchParams
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [timestamp] = useState(() => Date.now());
   
   // Process searchParams on the client side
@@ -18,14 +19,14 @@ export default function ClientPage({ searchParams = {} }: ClientPageProps) {
     if (pageParam) {
       const pageNum = parseInt(Array.isArray(pageParam) ? pageParam[0] : pageParam, 10);
       if (!isNaN(pageNum)) {
-        setInitialPage(pageNum);
+        setCurrentPage(pageNum);
       }
     }
   }, [searchParams]);
   
   return (
     <div className="min-h-screen">
-      <MainContent initialPage={initialPage} key={`content-${timestamp}`} />
+      <MainContent initialPage={currentPage} key={`content-${timestamp}`} />
       <div className="fixed bottom-2 right-2 text-xs text-gray-400">
         Updated: just now
       </div>

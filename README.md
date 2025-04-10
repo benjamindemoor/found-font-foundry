@@ -1,6 +1,78 @@
 # Found Font Foundry
 
-A growing collection of fonts discovered in the wild and everywhere in between.
+A growing collection of fonts discovered on the street, in the wild and everywhere in between.
+
+## Project Overview
+
+Found Font Foundry is a curated collection of typographic specimens found in the real world. The project uses [Are.na](https://www.are.na/benjamin-ikoma/found-font-foundry) as a content management system and displays the images in a responsive gallery.
+
+## Technologies Used
+
+- Next.js 15+
+- React
+- Tailwind CSS
+- Are.na API
+
+## Development
+
+To run the development server:
+
+```bash
+npm install
+npm run dev
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000).
+
+## Deployment
+
+### Deploying to Vercel (recommended)
+
+The easiest way to deploy this Next.js application is using Vercel:
+
+1. Install Vercel CLI (if not already installed):
+   ```bash
+   npm install -g vercel
+   ```
+
+2. Login to Vercel:
+   ```bash
+   vercel login
+   ```
+
+3. Deploy the application:
+   ```bash
+   vercel
+   ```
+
+4. For production deployment:
+   ```bash
+   vercel --prod
+   ```
+
+### Deploying to other platforms
+
+This application can also be deployed to:
+
+- Netlify
+- AWS Amplify
+- DigitalOcean App Platform
+- Any hosting service that supports Next.js applications
+
+## API Usage
+
+This project uses the Are.na API to fetch content from the [Found Font Foundry](https://www.are.na/benjamin-ikoma/found-font-foundry) channel.
+
+## Contributing
+
+To contribute to this project:
+
+1. Add your font discoveries to the [Are.na channel](https://www.are.na/benjamin-ikoma/found-font-foundry)
+2. For code contributions, please submit a pull request
+
+## License
+
+This project is maintained by [Benjamin Ikoma](http://benjaminikoma.be/).
 
 ## About
 
@@ -53,29 +125,6 @@ npm run dev
 - `/src/app` - Main application code
 - `/public/fonts` - Font files
 - `/public` - Static assets
-
-## Contributing
-
-Add your own font discoveries via [Are.na](https://www.are.na/benjamin-ikoma/found-font-foundry).
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-- A project by [Benjamin Ikoma](http://benjaminikoma.be/)
-- Font: Alte Haas Grotesk
-
-
-The website follows a minimalist design approach with:
-- White background
-- Black text
-- System fonts
-- Focus on the photographs
-- Clean and spacious layout
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
 

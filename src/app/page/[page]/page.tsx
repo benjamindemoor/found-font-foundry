@@ -3,14 +3,16 @@ import { Suspense } from 'react';
 import ClientPage from '../../ClientPage';
 import { notFound } from 'next/navigation';
 
-interface PageProps {
-  params: {
-    page: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
+// Remove explicit PageProps interface and type annotation
+// interface PageProps {
+//   params: {
+//     page: string;
+//   };
+//   searchParams?: { [key: string]: string | string[] | undefined };
+// }
 
-export default function Page({ params }: PageProps) {
+// Let TypeScript infer the props type
+const Page = ({ params }: { params: { page: string } }) => {
   const pageNumber = parseInt(params.page, 10);
   
   // Validate page number
@@ -30,4 +32,6 @@ export default function Page({ params }: PageProps) {
       </Suspense>
     </div>
   );
-} 
+};
+
+export default Page; 

@@ -39,4 +39,35 @@
     margin-left: 0;
     margin-right: 0;
   }
+  
+  /* Smaller title on mobile */
+  .title {
+    font-size: 2rem !important; /* Smaller heading */
+    line-height: 1.2;
+    margin-bottom: 0.5em;
+  }
+  
+  /* Smaller margins for container on mobile */
+  .responsive-container {
+    margin-left: 1em !important;
+    margin-right: 1em !important;
+    margin-top: 1em !important;
+  }
+  
+  /* Adjust image blocks width and offset on mobile */
+  .image-block {
+    width: 80% !important; /* Wider images on mobile */
+    margin-left: 0 !important; /* Override the offset on mobile */
+  }
+  
+  /* Adjust pagination layout for mobile */
+  .pagination-buttons {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  
+  .pagination-buttons > p {
+    order: 3; /* Move credit to bottom */
+    margin-top: 1.5rem !important;
+  }
 } 

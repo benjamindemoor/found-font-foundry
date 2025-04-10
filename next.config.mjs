@@ -28,11 +28,9 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
-  // Add Netlify specific settings
+  // Netlify specific settings
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
-  reactStrictMode: true,
-  swcMinify: true,
 };
 
 export default nextConfig; 

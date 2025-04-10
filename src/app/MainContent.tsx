@@ -57,7 +57,6 @@ export default function MainContent({ initialPage }: MainContentProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offsets, setOffsets] = useState<{[key: string]: {offset: number}}>({});
-  const [imageStates, setImageStates] = useState<{[key: string]: {loaded: boolean, width: number, height: number}}>({});
   const [totalPages, setTotalPages] = useState(1);
   const [perPage] = useState(30); // Updated to show 30 posts per page
   const [totalCount, setTotalCount] = useState(0);
@@ -114,10 +113,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
     // Set loading state first
     setLoading(true);
     
-    // Reset image states to empty - not just an empty object
-    setImageStates({});
-    
-    // Also reset blocks so no images from previous page are shown
+    // Reset blocks so no images from previous page are shown
     setBlocks([]);
     
     // Fetch data for the new page
@@ -393,28 +389,16 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }
     
     const offsetsMap: {[key: string]: {offset: number}} = {};
-    const initialImageStates: {[key: string]: {loaded: boolean, width: number, height: number}} = {};
     
     contents.forEach((block, index) => {
       // Get offset from the sequence, cycling through the array
       const offsetIndex = index % offsetValues.length;
       const offset = offsetValues[offsetIndex];
       offsetsMap[block.id] = { offset };
-      
-      // Initialize image state - use image dimensions if available
-      const width = block.image?.display?.width || block.image?.original?.width || 800;
-      const height = block.image?.display?.height || block.image?.original?.height || 600;
-      
-      initialImageStates[block.id] = { 
-        loaded: false, 
-        width, 
-        height
-      };
     });
     
-    // First set offsets and image states
+    // Set offsets
     setOffsets(offsetsMap);
-    setImageStates(initialImageStates);
     
     // Then update the blocks data
     setBlocks(contents);
@@ -452,21 +436,6 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }).toLowerCase();
   };
   
-  // For the image loading handler
-  const handleImageLoad = (blockId: string, e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement;
-    
-    // Set loaded state directly - no fancy logic, just mark it as loaded
-    setImageStates(prev => ({
-      ...prev,
-      [blockId]: {
-        loaded: true,
-        width: img.naturalWidth || 800,
-        height: img.naturalHeight || 600
-      }
-    }));
-  };
-
   // Function to update browser URL without causing navigation
   const updateBrowserUrl = (page: number) => {
     if (typeof window === 'undefined') return;
@@ -527,7 +496,6 @@ export default function MainContent({ initialPage }: MainContentProps) {
                 const offset = offsets[block.id]?.offset || 0;
                 const username = block.user?.username || 'anonymous';
                 const date = formatDate(block.updated_at);
-                const imageState = imageStates[block.id] || { loaded: false, width: 800, height: 600 };
                 
                 return (
                   <div 
@@ -544,14 +512,13 @@ export default function MainContent({ initialPage }: MainContentProps) {
                         <img 
                           src={block.image.display?.url || block.image.original?.url} 
                           alt={'Found font'} 
-                          className={`image-fade ${imageState.loaded ? 'loaded' : ''}`}
-                          onLoad={(e) => handleImageLoad(block.id, e)}
+                          className="image-fade"
                           loading="lazy"
                         />
                         <div 
                           className="placeholder"
                           style={{
-                            paddingBottom: `${(imageState.height / imageState.width) * 100}%`
+                            paddingBottom: `${(block.image.display?.height / block.image.display?.width || 0.75) * 100}%`
                           }}
                         />
                       </div>

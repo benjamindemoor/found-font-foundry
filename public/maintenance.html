@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="60">
+    <title>Found Fonts Foundry - Maintenance</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: black;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: normal;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+        }
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #000;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 2rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .timer {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Found Fonts Foundry</h1>
+        <p>We're currently performing some maintenance on our site.<br>Please check back in a few minutes.</p>
+        <div class="loading"></div>
+        <p>This page will automatically refresh to check if we're back online.</p>
+        <div class="timer">
+            Refreshing in <span id="countdown">60</span> seconds
+        </div>
+    </div>
+
+    <script>
+        // Simple countdown timer
+        let countdown = 60;
+        const countdownElement = document.getElementById('countdown');
+        
+        setInterval(() => {
+            countdown -= 1;
+            if (countdown <= 0) {
+                countdown = 0;
+            }
+            countdownElement.textContent = countdown;
+        }, 1000);
+    </script>
+</body>
+</html> 

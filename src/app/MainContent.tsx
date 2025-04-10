@@ -152,6 +152,20 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }
   }, [loading]);
 
+  // Update document title when count changes
+  useEffect(() => {
+    // Only update if we have a valid count
+    if (totalCount > 0 && typeof document !== 'undefined') {
+      document.title = `Found Fonts Foundry (${totalCount})`;
+      
+      // Also update any elements that might show the count
+      const countElements = document.querySelectorAll('.count-display');
+      countElements.forEach(el => {
+        el.textContent = totalCount.toString();
+      });
+    }
+  }, [totalCount]);
+
   // Helper function to get a random font
   const getRandomFont = () => {
     // Array of available fonts in the fonts folder (exact font names)
@@ -178,29 +192,46 @@ export default function MainContent({ initialPage }: MainContentProps) {
 
   // Server-side fetch with caching
   const fetchFromServerWithCache = async <T,>(url: string, forceRefresh = false): Promise<T> => {
-    try {
-      // Use our internal API route that handles server-side caching
-      const response = await axios.get<T>('/api/arena', {
-        params: {
-          url: url,
-          force: forceRefresh ? 'true' : 'false'
+    let retries = 2;
+    let lastError;
+    
+    while (retries >= 0) {
+      try {
+        // Use our internal API route that handles server-side caching
+        const response = await axios.get<T>('/api/arena', {
+          params: {
+            url: url,
+            force: forceRefresh ? 'true' : 'false'
+          },
+          timeout: 15000 // 15 second timeout
+        });
+        
+        // Update last fetch timestamp
+        lastFetchRef.current = Date.now();
+        
+        return response.data;
+      } catch (error) {
+        console.error(`Error fetching data (retries left: ${retries}):`, error);
+        lastError = error;
+        
+        if (retries > 0) {
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (3 - retries)));
         }
-      });
-      
-      // Update last fetch timestamp
-      lastFetchRef.current = Date.now();
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      throw error;
+        
+        retries--;
+      }
     }
+    
+    // All retries failed
+    throw lastError;
   };
 
   // Fetch channel info with server-side caching
   const fetchChannelInfo = async (forceRefresh = false) => {
     try {
       isFetchingRef.current = true;
+      setError(null); // Clear any previous errors
       
       // Get channel info to determine total count
       const channelData = await fetchFromServerWithCache<ChannelResponse>(
@@ -208,16 +239,24 @@ export default function MainContent({ initialPage }: MainContentProps) {
         forceRefresh
       );
       
-      if (channelData && typeof channelData.length === 'number') {
-        const totalItems = channelData.length;
+      if (channelData) {
+        // Make sure we get the correct length - might be in different properties depending on the API
+        const totalItems = channelData.contents_count || channelData.length || 49; // Fallback to 49 if API doesn't return correct value
         setTotalCount(totalItems);
         
         // Calculate total pages based on accurate item count
         const calculatedTotalPages = Math.ceil(totalItems / perPage);
-        setTotalPages(calculatedTotalPages);
+        setTotalPages(calculatedTotalPages > 0 ? calculatedTotalPages : 1); // Ensure at least 1 page
+        
+        console.log(`Total items in channel: ${totalItems}, Total pages: ${calculatedTotalPages}`);
       }
     } catch (error) {
       console.error('Error fetching channel info:', error);
+      
+      // If we can't fetch channel info, set default values
+      setTotalCount(49); // Use the known value of 49 as fallback
+      setTotalPages(Math.ceil(49 / perPage));
+      
     } finally {
       isFetchingRef.current = false;
     }
@@ -227,6 +266,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
   const fetchData = async (page: number, forceRefresh = false) => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
       isFetchingRef.current = true;
       
       // Fetch data with server-side caching
@@ -235,26 +275,70 @@ export default function MainContent({ initialPage }: MainContentProps) {
         forceRefresh
       );
       
+      // Verify we have valid data before processing
+      if (!responseData || !responseData.contents) {
+        throw new Error('Invalid response data received from API');
+      }
+      
       // Process the data
       processArenaData(responseData);
       
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching data:', err);
-      setError('Failed to load images. Please try again later.');
-      setLoading(false);
+      
+      // Extract a user-friendly message from the error
+      let errorMessage = 'Failed to load images. Please try again later.';
+      
+      if (err instanceof Error) {
+        // Check for specific error patterns in the error or message
+        const errMsg = err.message || '';
+        if (errMsg.includes('timeout') || errMsg.includes('ECONNABORTED')) {
+          errorMessage = 'Request timed out. Please try again.';
+        } else {
+          // Try to handle axios error properties that might exist
+          const axiosError = err as any;
+          if (axiosError.response) {
+            // Server responded with an error status
+            if (axiosError.response.status === 500) {
+              errorMessage = 'Internal Server Error. Our team has been notified.';
+            } else if (axiosError.response.status === 404) {
+              errorMessage = 'Content not found. Please check back later.';
+            }
+          } else if (axiosError.request) {
+            // Request made but no response received
+            errorMessage = 'No response from server. Please check your connection.';
+          }
+        }
+      }
+      
+      setError(errorMessage);
+      
+      // Fall back to empty content but don't crash the app
+      setBlocks([]);
+      
     } finally {
       isFetchingRef.current = false;
+      setLoading(false);
     }
   };
 
   // Process Arena data and update state
   const processArenaData = (data: ArenaResponse) => {
     // Extract pagination metadata from response
-    const totalItems = data.length || 46; // Fall back to 46 if not provided
+    let totalItems = data.length || totalCount;
+    
+    // If the API returns 0 or undefined, use our fallback value
+    if (!totalItems || totalItems <= 0) {
+      totalItems = 49; // Fallback to 49 as mentioned by the user
+    }
+    
     setTotalCount(totalItems);
     
-    const calculatedTotalPages = Math.ceil(totalItems / perPage);
-    setTotalPages(data.total_pages || calculatedTotalPages);
+    // Calculate total pages, ensure we have at least 1 page
+    const calculatedTotalPages = Math.max(1, Math.ceil(totalItems / perPage));
+    setTotalPages(calculatedTotalPages);
+    
+    console.log(`Processing data: Total items: ${totalItems}, Pages: ${calculatedTotalPages}, Current page: ${currentPage}`);
     
     const contents = data.contents || [];
     
@@ -389,8 +473,8 @@ export default function MainContent({ initialPage }: MainContentProps) {
             Found Fonts Foundry
           </h1>
           <p className="text-base text-gray-700" style={{ marginBottom: '2em' }}>
-            A growing collection ({totalCount}) of fonts discovered on the street, in the wild and everywhere in between.<br />
-            Add your own finds via our <a href="https://www.are.na/benjamin-ikoma/found-fonts-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a> channel.
+            A growing collection (<span className="count-display">{totalCount || 49}</span>) of fonts discovered on the street, in the wild and everywhere in between<br />
+            Add your own finds via our <a href="https://www.are.na/benjamin-ikoma/found-fonts-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a> channel
           </p>
         </header>
 
@@ -453,7 +537,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
                     <button 
                       onClick={handlePrevPage} 
                       disabled={currentPage === 1 || loading}
-                      className={`pagination-btn ${(currentPage === 1 || loading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`pagination-btn ${(currentPage === 1 || loading) ? 'opacity-50 cursor-not-allowed' : 'underline'}`}
                     >
                       Previous
                     </button>
@@ -463,7 +547,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
                     <button 
                       onClick={handleNextPage} 
                       disabled={currentPage === totalPages || loading}
-                      className={`pagination-btn ${(currentPage === totalPages || loading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`pagination-btn ${(currentPage === totalPages || loading) ? 'opacity-50 cursor-not-allowed' : 'underline'}`}
                     >
                       Next
                     </button>

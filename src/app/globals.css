@@ -32,7 +32,7 @@ h1 {
 /* Adding specific styling for the title */
 h1.title {
   line-height: 1;
-  font-size: 5rem;
+  font-size: 6.5rem;
 }
 
 .text-5em {
@@ -248,17 +248,17 @@ a.underline {
 /* Responsive styles */
 @media (max-width: 1200px) {
   h1.title {
-    font-size: 4.5rem;
+    font-size: 5.5rem;
   }
 }
 
 @media (max-width: 768px) {
   .text-5em {
-    font-size: 3em;
+    font-size: 4em;
   }
   
   h1.title {
-    font-size: 3.5rem;
+    font-size: 4.5rem;
   }
   
   .fixed-bottom-right {
@@ -269,7 +269,7 @@ a.underline {
 
 @media (max-width: 480px) {
   h1.title {
-    font-size: 2.8rem;
+    font-size: 3.5rem;
   }
 }
 
@@ -326,7 +326,7 @@ a.underline {
 /* Title styles */
 h1.title {
   letter-spacing: -0.01em;
-  font-size: 5rem;
+  font-size: 6.5rem;
   line-height: 1.1;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

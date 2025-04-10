@@ -7,19 +7,20 @@
 .placeholder {
   width: 100%;
   height: 0;
-  background-color: #333;
+  background-color: #ffffff;
   position: absolute;
   top: 0;
   left: 0;
   z-index: 1;
-  transition: opacity 0.8s ease;
+  transition: opacity 0.4s ease;
 }
 
 .image-fade {
   opacity: 0;
-  transition: opacity 0.8s ease;
+  transition: opacity 0.4s ease;
   position: relative;
   z-index: 2;
+  will-change: opacity;
 }
 
 .image-fade.loaded {

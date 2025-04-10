@@ -435,15 +435,19 @@ export default function MainContent({ initialPage }: MainContentProps) {
   // Function to handle image load
   const handleImageLoad = (blockId: string, e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
-    setImageStates(prev => ({
-      ...prev,
-      [blockId]: {
-        ...prev[blockId],
-        loaded: true,
-        width: img.naturalWidth,
-        height: img.naturalHeight
-      }
-    }));
+    
+    // Small timeout to ensure the transition is smooth
+    setTimeout(() => {
+      setImageStates(prev => ({
+        ...prev,
+        [blockId]: {
+          ...prev[blockId],
+          loaded: true,
+          width: img.naturalWidth,
+          height: img.naturalHeight
+        }
+      }));
+    }, 50); // Small delay for smoother transition
   };
 
   return (
@@ -508,12 +512,13 @@ export default function MainContent({ initialPage }: MainContentProps) {
                           alt={'Found font'} 
                           className={`w-full h-auto image-fade ${imageState.loaded ? 'loaded' : ''}`}
                           onLoad={(e) => handleImageLoad(block.id, e)}
+                          loading="lazy"
                         />
                         <div 
                           className="placeholder"
                           style={{
                             paddingBottom: `${(imageState.height / imageState.width) * 100}%`,
-                            backgroundColor: '#f0f0f0'
+                            backgroundColor: '#ffffff'
                           }}
                         />
                       </div>

@@ -21,12 +21,18 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    unoptimized: true, // This helps with Netlify deployments
   },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  // Add Netlify specific settings
+  trailingSlash: false,
+  skipTrailingSlashRedirect: true,
+  reactStrictMode: true,
+  swcMinify: true,
 };
 
 export default nextConfig; 

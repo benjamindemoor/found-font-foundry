@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Limit middleware to only run on specific paths
+// Limit middleware to specific paths to avoid conflicts
 export const config = {
   matcher: ['/page/:path*'],
 }; 

@@ -3,16 +3,16 @@ import { Suspense } from 'react';
 import ClientPage from '../../ClientPage';
 import { notFound } from 'next/navigation';
 
-// Remove explicit PageProps interface and type annotation
-// interface PageProps {
-//   params: {
-//     page: string;
-//   };
-//   searchParams?: { [key: string]: string | string[] | undefined };
-// }
+// Define a more flexible type that works both with local dev and Netlify
+type PageParams = {
+  params: {
+    page: string;
+  };
+};
 
-// Let TypeScript infer the props type
-const Page = ({ params }: { params: { page: string } }) => {
+// Make the component async to satisfy Netlify's apparent expectation
+// that params is Promise-like
+export default async function Page({ params }: PageParams) {
   const pageNumber = parseInt(params.page, 10);
   
   // Validate page number
@@ -32,6 +32,4 @@ const Page = ({ params }: { params: { page: string } }) => {
       </Suspense>
     </div>
   );
-};
-
-export default Page; 
+} 

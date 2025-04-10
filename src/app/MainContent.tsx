@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import axios from 'axios';
 import './image-placeholder.css';
 import './fonts.css';
 import { useRouter } from 'next/navigation';
 
+// Define interfaces for API responses
 interface ArenaResponse {
   contents?: any[];
   total_pages?: number;
@@ -24,10 +25,20 @@ interface ChannelResponse {
   // Add other properties as needed
 }
 
+// Modified to support server-side caching
+interface CacheItem<T> {
+  data: T;
+  timestamp: number;
+  page?: number; // For paginated content
+}
+
+// Cache duration - 10 minutes in milliseconds
+const CACHE_DURATION = 10 * 60 * 1000;
+
 // Loading fallback component
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
         <div className="loading-text">searching...</div>
       </div>
@@ -57,6 +68,10 @@ export default function MainContent({ initialPage }: MainContentProps) {
   // Use passed in initialPage value
   const [currentPage, setCurrentPage] = useState(initialPage);
   
+  // Reference for data freshness
+  const lastFetchRef = useRef<number>(0);
+  const isFetchingRef = useRef<boolean>(false);
+
   // Check for query params and convert to clean URLs for the browser display
   useEffect(() => {
     // Get the current URL and pathname
@@ -87,10 +102,30 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }
   }, [currentPage]);
 
+  // Fetch data on component mount and page changes
   useEffect(() => {
-    // Get channel info first to get total count
-    fetchChannelInfo();
-    // Then fetch the actual page contents
+    const fetchInitialData = async () => {
+      await fetchChannelInfo();
+      await fetchData(currentPage);
+    };
+
+    fetchInitialData();
+
+    // Setup interval to check data freshness
+    const intervalId = setInterval(() => {
+      const now = Date.now();
+      if (now - lastFetchRef.current > CACHE_DURATION && !isFetchingRef.current) {
+        console.log('Refreshing data after cache expiration...');
+        fetchChannelInfo(true);
+        fetchData(currentPage, true);
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Fetch data when page changes
+  useEffect(() => {
     fetchData(currentPage);
   }, [currentPage]);
 
@@ -141,11 +176,37 @@ export default function MainContent({ initialPage }: MainContentProps) {
     setRandomFont(getRandomFont());
   }, [currentPage]);
 
-  const fetchChannelInfo = async () => {
+  // Server-side fetch with caching
+  const fetchFromServerWithCache = async <T,>(url: string, forceRefresh = false): Promise<T> => {
     try {
+      // Use our internal API route that handles server-side caching
+      const response = await axios.get<T>('/api/arena', {
+        params: {
+          url: url,
+          force: forceRefresh ? 'true' : 'false'
+        }
+      });
+      
+      // Update last fetch timestamp
+      lastFetchRef.current = Date.now();
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      throw error;
+    }
+  };
+
+  // Fetch channel info with server-side caching
+  const fetchChannelInfo = async (forceRefresh = false) => {
+    try {
+      isFetchingRef.current = true;
+      
       // Get channel info to determine total count
-      const channelResponse = await axios.get<ChannelResponse>('https://api.are.na/v2/channels/found-fonts-foundry');
-      const channelData = channelResponse.data;
+      const channelData = await fetchFromServerWithCache<ChannelResponse>(
+        'https://api.are.na/v2/channels/found-fonts-foundry', 
+        forceRefresh
+      );
       
       if (channelData && typeof channelData.length === 'number') {
         const totalItems = channelData.length;
@@ -157,88 +218,101 @@ export default function MainContent({ initialPage }: MainContentProps) {
       }
     } catch (error) {
       console.error('Error fetching channel info:', error);
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
-  const fetchData = async (page: number) => {
+  // Fetch page data with server-side caching
+  const fetchData = async (page: number, forceRefresh = false) => {
     try {
       setLoading(true);
-      // Use pagination parameters as per Arena API docs - page and per
-      const response = await axios.get(`https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`);
+      isFetchingRef.current = true;
       
-      // Extract pagination metadata from response
-      const data = response.data as ArenaResponse;
+      // Fetch data with server-side caching
+      const responseData = await fetchFromServerWithCache<ArenaResponse>(
+        `https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`,
+        forceRefresh
+      );
       
-      // Get correct total pages from API response or calculate it
-      const totalItems = data.length || 46; // Fall back to 46 if not provided
-      setTotalCount(totalItems);
+      // Process the data
+      processArenaData(responseData);
       
-      const calculatedTotalPages = Math.ceil(totalItems / perPage);
-      
-      setTotalPages(data.total_pages || calculatedTotalPages);
-      
-      const contents = data.contents || [];
-      
-      // Base offsets: 0%, 10%, 20%, 30%, 40%, 50%
-      let offsetValues = [0, 10, 20, 30, 40, 50];
-      
-      // Occasionally shuffle or swap some values to create variations
-      const shouldShuffle = Math.random() < 0.5;
-      
-      if (shouldShuffle) {
-        // Option 1: Swap some pair of values
-        const swap = (i: number, j: number) => {
-          const temp = offsetValues[i];
-          offsetValues[i] = offsetValues[j];
-          offsetValues[j] = temp;
-        };
-        
-        // Random swap patterns
-        const pattern = Math.floor(Math.random() * 3);
-        if (pattern === 0) {
-          // Swap 10% and 20%
-          swap(1, 2);
-        } else if (pattern === 1) {
-          // Swap 40% and 50%
-          swap(4, 5);
-        } else {
-          // Swap 0% and 10%
-          swap(0, 1);
-        }
-      }
-      
-      const offsetsMap: {[key: string]: {offset: number}} = {};
-      const initialImageStates: {[key: string]: {loaded: boolean, width: number, height: number}} = {};
-      
-      contents.forEach((block, index) => {
-        // Get offset from the sequence, cycling through the array
-        const offsetIndex = index % offsetValues.length;
-        const offset = offsetValues[offsetIndex];
-        offsetsMap[block.id] = { offset };
-        
-        // Initialize image state
-        initialImageStates[block.id] = { 
-          loaded: false, 
-          width: block.image?.display?.width || 800, 
-          height: block.image?.display?.height || 600 
-        };
-      });
-      
-      setOffsets(offsetsMap);
-      setImageStates(initialImageStates);
-      
-      // Set blocks after all other state is set
-      setBlocks(contents);
-      
-      // Minor delay to ensure smooth transition
-      setTimeout(() => {
-        setLoading(false);
-      }, 800);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load images. Please try again later.');
       setLoading(false);
+    } finally {
+      isFetchingRef.current = false;
     }
+  };
+
+  // Process Arena data and update state
+  const processArenaData = (data: ArenaResponse) => {
+    // Extract pagination metadata from response
+    const totalItems = data.length || 46; // Fall back to 46 if not provided
+    setTotalCount(totalItems);
+    
+    const calculatedTotalPages = Math.ceil(totalItems / perPage);
+    setTotalPages(data.total_pages || calculatedTotalPages);
+    
+    const contents = data.contents || [];
+    
+    // Base offsets: 0%, 10%, 20%, 30%, 40%, 50%
+    let offsetValues = [0, 10, 20, 30, 40, 50];
+    
+    // Occasionally shuffle or swap some values to create variations
+    const shouldShuffle = Math.random() < 0.5;
+    
+    if (shouldShuffle) {
+      // Option 1: Swap some pair of values
+      const swap = (i: number, j: number) => {
+        const temp = offsetValues[i];
+        offsetValues[i] = offsetValues[j];
+        offsetValues[j] = temp;
+      };
+      
+      // Random swap patterns
+      const pattern = Math.floor(Math.random() * 3);
+      if (pattern === 0) {
+        // Swap 10% and 20%
+        swap(1, 2);
+      } else if (pattern === 1) {
+        // Swap 40% and 50%
+        swap(4, 5);
+      } else {
+        // Swap 0% and 10%
+        swap(0, 1);
+      }
+    }
+    
+    const offsetsMap: {[key: string]: {offset: number}} = {};
+    const initialImageStates: {[key: string]: {loaded: boolean, width: number, height: number}} = {};
+    
+    contents.forEach((block, index) => {
+      // Get offset from the sequence, cycling through the array
+      const offsetIndex = index % offsetValues.length;
+      const offset = offsetValues[offsetIndex];
+      offsetsMap[block.id] = { offset };
+      
+      // Initialize image state
+      initialImageStates[block.id] = { 
+        loaded: false, 
+        width: block.image?.display?.width || 800, 
+        height: block.image?.display?.height || 600 
+      };
+    });
+    
+    setOffsets(offsetsMap);
+    setImageStates(initialImageStates);
+    
+    // Set blocks after all other state is set
+    setBlocks(contents);
+    
+    // Minor delay to ensure smooth transition
+    setTimeout(() => {
+      setLoading(false);
+    }, 800);
   };
 
   // Helper to navigate to the previous page
@@ -310,8 +384,6 @@ export default function MainContent({ initialPage }: MainContentProps) {
       >
         <header className="mb-12">
           <h1 className="title" style={{ 
-            marginBottom: '0.1em', 
-            marginTop: 0,
             fontFamily: `'${randomFont}', sans-serif`
           }}>
             Found Fonts Foundry

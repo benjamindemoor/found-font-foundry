@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import axios from 'axios';
 import './fixed-image.css';
 import './fonts.css';
-import { useRouter } from 'next/navigation';
 
 // Define interfaces for API responses
 interface ArenaResponse {
@@ -29,7 +28,6 @@ interface ChannelResponse {
 interface CacheItem<T> {
   data: T;
   timestamp: number;
-  page?: number; // For paginated content
 }
 
 // Cache duration - 10 minutes in milliseconds
@@ -46,13 +44,7 @@ function LoadingFallback() {
   );
 }
 
-interface MainContentProps {
-  initialPage: number;
-}
-
-export default function MainContent({ initialPage }: MainContentProps) {
-  const router = useRouter();
-  
+export default function MainContent() {
   // Modify state for infinite scroll
   const [blocks, setBlocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,9 +52,9 @@ export default function MainContent({ initialPage }: MainContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [offsets, setOffsets] = useState<{[key: string]: {offset: number}}>({});
   const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [perPage] = useState(30); // Updated to show 30 posts per page
   const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // State for randomly selected font
   const [randomFont, setRandomFont] = useState<string>('Cooper Black');
@@ -71,129 +63,8 @@ export default function MainContent({ initialPage }: MainContentProps) {
   const lastFetchRef = useRef<number>(0);
   const isFetchingRef = useRef<boolean>(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  
-  // Reference to track already loaded pages to avoid duplicates
   const loadedPagesRef = useRef<Set<number>>(new Set([1]));
-
-  // Fetch initial data on component mount
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      await fetchChannelInfo();
-      await fetchData(1);
-    };
-
-    fetchInitialData();
-
-    // Setup interval to check data freshness
-    const intervalId = setInterval(() => {
-      const now = Date.now();
-      if (now - lastFetchRef.current > CACHE_DURATION && !isFetchingRef.current) {
-        console.log('Refreshing data after cache expiration...');
-        fetchChannelInfo(true);
-      }
-    }, 60000); // Check every minute
-
-    return () => {
-      clearInterval(intervalId);
-      // Cleanup observer
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Set up intersection observer for infinite scroll
-  const lastBlockElementRef = useCallback((node: HTMLDivElement) => {
-    if (loadingMore) return;
-    
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-    
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loadingMore) {
-        console.log('Loading more content, current page:', currentPage);
-        loadMoreItems();
-      }
-    }, {
-      rootMargin: '300px', // Start loading when within 300px of the bottom
-    });
-    
-    if (node) {
-      observerRef.current.observe(node);
-    }
-  }, [loadingMore, hasMore, currentPage]);
-
-  // Function to load more items when user scrolls
-  const loadMoreItems = async () => {
-    if (loadingMore || !hasMore) return;
-    
-    const nextPage = currentPage + 1;
-    
-    // Skip if we've already loaded this page
-    if (loadedPagesRef.current.has(nextPage)) return;
-    
-    setLoadingMore(true);
-    
-    try {
-      await fetchData(nextPage, false, true); // The third param indicates this is for infinite scroll
-      loadedPagesRef.current.add(nextPage);
-      setCurrentPage(nextPage);
-    } catch (error) {
-      console.error('Error loading more items:', error);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  // Add effect to handle body overflow during initial loading
-  useEffect(() => {
-    if (loading) {
-      document.body.classList.add('overflow-hidden');
-    } else {
-      document.body.classList.remove('overflow-hidden');
-    }
-  }, [loading]);
-
-  // Update document title when count changes
-  useEffect(() => {
-    // Only update if we have a valid count
-    if (totalCount > 0 && typeof document !== 'undefined') {
-      document.title = `Found Fonts Foundry (${totalCount})`;
-      
-      // Also update any elements that might show the count
-      const countElements = document.querySelectorAll('.count-display');
-      countElements.forEach(el => {
-        el.textContent = totalCount.toString();
-      });
-    }
-  }, [totalCount]);
-
-  // Helper function to get a random font
-  const getRandomFont = () => {
-    // Array of available fonts in the fonts folder (exact font names)
-    const fonts = [
-      'Cooper Black',
-      'Boecklins Universe',
-      'Brush Script',
-      'Davida Bold',
-      'Papyrus',
-      'Comic Sans Bold',
-      'Choc',
-      'Alte Haas Grotesk'
-    ];
-    
-    // Select a random font from the array
-    const randomIndex = Math.floor(Math.random() * fonts.length);
-    return fonts[randomIndex];
-  };
-
-  // Set random font on initial load
-  useEffect(() => {
-    setRandomFont(getRandomFont());
-  }, []);
-
+  
   // Server-side fetch with caching
   const fetchFromServerWithCache = async <T,>(url: string, forceRefresh = false): Promise<T> => {
     let retries = 2;
@@ -261,10 +132,11 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }
   };
 
-  // Fetch page data with server-side caching
-  const fetchData = async (page: number, forceRefresh = false, isLoadMore = false) => {
+  // Fetch data with server-side caching
+  const fetchData = async (forceRefresh = false, isLoadMore = false) => {
     try {
-      console.log(`Fetching data for page ${page}, force refresh: ${forceRefresh}, loadMore: ${isLoadMore}`);
+      const page = isLoadMore ? currentPage + 1 : 1;
+      console.log(`🔄 Fetching data for page ${page}, loadMore: ${isLoadMore}`);
       
       if (!isLoadMore) {
         setLoading(true);
@@ -273,33 +145,125 @@ export default function MainContent({ initialPage }: MainContentProps) {
       setError(null); // Clear any previous errors
       isFetchingRef.current = true;
       
-      // Create a unique cache key for each page
-      const pageUrl = `https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`;
+      // Use the Arena API with the channel slug and the proper pagination parameters
+      // We're explicitly using slug instead of ID to ensure we get the right channel
+      const apiUrl = `https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}`;
       
-      // Fetch data with server-side caching
-      const responseData = await fetchFromServerWithCache<ArenaResponse>(
-        pageUrl,
-        forceRefresh
-      );
+      console.log(`📡 API request: ${apiUrl}`);
       
-      // Verify we have valid data before processing
-      if (!responseData || !responseData.contents) {
-        throw new Error('Invalid response data received from API');
+      // Make a direct API call without any caching to debug pagination
+      try {
+        const response = await axios.get<ArenaResponse>(apiUrl, { 
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            // Add a random query parameter to prevent caching
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+          // Add a timestamp to URL to bypass browser cache
+          params: {
+            _t: Date.now()
+          }
+        });
+        
+        const responseData: ArenaResponse = response.data;
+        
+        // Log detailed pagination information
+        console.log(`📊 Page info - Current: ${responseData.current_page}, Total pages: ${responseData.total_pages}`);
+        console.log(`📦 Received ${responseData.contents?.length || 0} items`);
+        
+        // Check for pagination issues
+        if (!responseData.contents || responseData.contents.length === 0) {
+          console.warn(`⚠️ Empty response data for page ${page}`);
+          
+          if (page > 1) {
+            // No more content, we've reached the end
+            setHasMore(false);
+            setLoadingMore(false);
+            return;
+          } else {
+            throw new Error('No content found in channel');
+          }
+        }
+        
+        // Calculate if we have more pages
+        const isLastPage = (responseData.current_page || 1) >= (responseData.total_pages || 1);
+        
+        if (isLastPage) {
+          console.log('🏁 Reached last page, no more content available');
+          setHasMore(false);
+        }
+        
+        // Update current page tracker
+        if (isLoadMore) {
+          setCurrentPage(page);
+          loadedPagesRef.current.add(page);
+        } else {
+          setCurrentPage(1);
+          loadedPagesRef.current = new Set([1]);
+        }
+        
+        // Process the data
+        processArenaData(responseData, isLoadMore);
+        
+      } catch (apiError) {
+        console.error('❌ Direct API call failed:', apiError);
+        
+        // Try the server-side API route as a fallback
+        try {
+          console.log('🔁 Falling back to server-side API');
+          const response = await axios.get<ArenaResponse>('/api/arena', {
+            params: {
+              url: apiUrl,
+              force: 'true', // Always force refresh for pagination testing
+              _t: Date.now() // Add timestamp to prevent caching
+            }
+          });
+          
+          const responseData: ArenaResponse = response.data;
+          
+          if (!responseData.contents || responseData.contents.length === 0) {
+            console.warn(`⚠️ Empty server-side response for page ${page}`);
+            
+            if (page > 1) {
+              // No more content, we've reached the end
+              setHasMore(false);
+              setLoadingMore(false);
+              return;
+            } else {
+              throw new Error('No content found in channel (server-side)');
+            }
+          }
+          
+          // Calculate if we have more pages
+          const isLastPage = (responseData.current_page || 1) >= (responseData.total_pages || 1);
+          
+          if (isLastPage) {
+            console.log('🏁 Reached last page, no more content available');
+            setHasMore(false);
+          }
+          
+          // Update current page tracker
+          if (isLoadMore) {
+            setCurrentPage(page);
+            loadedPagesRef.current.add(page);
+          } else {
+            setCurrentPage(1);
+            loadedPagesRef.current = new Set([1]);
+          }
+          
+          // Process the data
+          processArenaData(responseData, isLoadMore);
+          
+        } catch (fallbackError) {
+          console.error('❌ Fallback API call also failed:', fallbackError);
+          throw fallbackError;
+        }
       }
-      
-      console.log(`Received data for page ${page} with ${responseData.contents.length} items`);
-      
-      // Check if this is the last page
-      const totalPages = responseData.total_pages || 1;
-      if (page >= totalPages) {
-        setHasMore(false);
-      }
-      
-      // Process the data
-      processArenaData(responseData, isLoadMore);
       
     } catch (err: unknown) {
-      console.error(`Error fetching data for page ${page}:`, err);
+      console.error(`❌ Error fetching data:`, err);
       
       // Extract a user-friendly message from the error
       let errorMessage = 'Failed to load images. Please try again later.';
@@ -319,6 +283,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
             } else if (axiosError.response.status === 404) {
               errorMessage = 'Content not found. Please check back later.';
             }
+            console.error('API Error Response:', axiosError.response.data);
           } else if (axiosError.request) {
             // Request made but no response received
             errorMessage = 'No response from server. Please check your connection.';
@@ -342,6 +307,141 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }
   };
 
+  // Load more items function
+  const loadMoreItems = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    
+    console.log('Loading more items, next page:', currentPage + 1);
+    
+    // Skip if we've already loaded this page
+    if (loadedPagesRef.current.has(currentPage + 1)) return;
+    
+    setLoadingMore(true);
+    
+    try {
+      await fetchData(false, true);
+    } catch (error) {
+      console.error('Error loading more items:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, currentPage, fetchData]);
+
+  // Update the useCallback hook that creates the observer
+  const lastBlockElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingMore || !node) return;
+    
+    // Always disconnect the previous observer before creating a new one
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    
+    // Create a new intersection observer
+    observerRef.current = new IntersectionObserver(entries => {
+      // Check if the element is intersecting and we have more content to load
+      if (entries[0] && entries[0].isIntersecting && hasMore && !loadingMore) {
+        console.log('🔍 Intersection detected, loading more items');
+        // Ensure we call loadMoreItems in a way that doesn't get caught in a race condition
+        setTimeout(() => loadMoreItems(), 100);
+      }
+    }, {
+      rootMargin: '300px', // Larger margin to trigger earlier before reaching bottom
+      threshold: 0.1 // Trigger when at least 10% of the element is visible
+    });
+    
+    // Start observing the sentinel element
+    observerRef.current.observe(node);
+    console.log('📡 Observer attached to element');
+    
+    // Return cleanup function
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
+  }, [loadingMore, hasMore, loadMoreItems]);
+
+  // Add debug logging when hasMore or loadingMore changes
+  useEffect(() => {
+    console.log(`State update - hasMore: ${hasMore}, loadingMore: ${loadingMore}, current page: ${currentPage}`);
+  }, [hasMore, loadingMore, currentPage]);
+
+  // Fetch initial data on component mount
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      await fetchChannelInfo();
+      await fetchData();
+    };
+
+    fetchInitialData();
+
+    // Setup interval to check data freshness
+    const intervalId = setInterval(() => {
+      const now = Date.now();
+      if (now - lastFetchRef.current > CACHE_DURATION && !isFetchingRef.current) {
+        console.log('Refreshing data after cache expiration...');
+        fetchChannelInfo(true);
+      }
+    }, 60000); // Check every minute
+
+    return () => {
+      clearInterval(intervalId);
+      // Cleanup observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Add effect to handle body overflow during initial loading
+  useEffect(() => {
+    if (loading) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+  }, [loading]);
+
+  // Update document title when count changes
+  useEffect(() => {
+    // Only update if we have a valid count
+    if (totalCount > 0 && typeof document !== 'undefined') {
+      document.title = `Found Fonts Foundry (${totalCount})`;
+      
+      // Also update any elements that might show the count
+      const countElements = document.querySelectorAll('.count-display');
+      countElements.forEach(el => {
+        el.textContent = totalCount.toString();
+      });
+    }
+  }, [totalCount]);
+
+  // Helper function to get a random font
+  const getRandomFont = () => {
+    // Array of available fonts in the fonts folder (exact font names)
+    const fonts = [
+      'Cooper Black',
+      'Boecklins Universe',
+      'Brush Script',
+      'Davida Bold',
+      'Papyrus',
+      'Comic Sans Bold',
+      'Choc',
+      'Alte Haas Grotesk'
+    ];
+    
+    // Select a random font from the array
+    const randomIndex = Math.floor(Math.random() * fonts.length);
+    return fonts[randomIndex];
+  };
+
+  // Set random font on initial load
+  useEffect(() => {
+    setRandomFont(getRandomFont());
+  }, []);
+
   // Process Arena data and update state
   const processArenaData = (data: ArenaResponse, isLoadMore = false) => {
     // Extract pagination metadata from response
@@ -357,7 +457,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
     const contents = data.contents || [];
     
     if (contents.length === 0) {
-      console.warn('No contents found for page:', currentPage);
+      console.warn('No contents found in response');
       setLoading(false);
       setLoadingMore(false);
       return;
@@ -407,7 +507,27 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }));
     
     // Then update the blocks data - append if loading more, replace if initial load
-    setBlocks(prev => isLoadMore ? [...prev, ...contents] : contents);
+    // For now, don't filter duplicates to debug what the API is returning
+    setBlocks(prev => {
+      if (isLoadMore) {
+        console.log(`Adding ${contents.length} new blocks`);
+        // Add page number to each block for debugging
+        const pageTaggedBlocks = contents.map(block => ({
+          ...block,
+          _page: currentPage + 1,
+          _key: `${block.id}-p${currentPage + 1}`
+        }));
+        return [...prev, ...pageTaggedBlocks];
+      } else {
+        // Add page number to each block for debugging
+        const pageTaggedBlocks = contents.map(block => ({
+          ...block,
+          _page: 1,
+          _key: `${block.id}-p1`
+        }));
+        return pageTaggedBlocks;
+      }
+    });
     
     // Turn off loading states after a short delay
     setTimeout(() => {
@@ -471,14 +591,10 @@ export default function MainContent({ initialPage }: MainContentProps) {
                 const username = block.user?.username || 'anonymous';
                 const date = formatDate(block.updated_at);
                 
-                // Add ref to last item for infinite scroll
-                const isLastItem = index === blocks.length - 1;
-                
                 return (
                   <div 
-                    key={block.id} 
+                    key={block._key || `${block.id}-${index}`}
                     className="image-block"
-                    ref={isLastItem ? lastBlockElementRef : null}
                     style={{
                       marginLeft: `${offset}%`,
                       width: '50%',
@@ -496,7 +612,8 @@ export default function MainContent({ initialPage }: MainContentProps) {
                       </div>
                     )}
                     <p className="text-sm text-gray-600 mt-1">
-                      submitted by {username} – {date}
+                      submitted by {username} – {date} 
+                      {block._page && <span className="text-xs text-gray-400 ml-1">(p{block._page})</span>}
                     </p>
                   </div>
                 );
@@ -506,12 +623,27 @@ export default function MainContent({ initialPage }: MainContentProps) {
             {/* Loading indicator for infinite scroll */}
             {loadingMore && (
               <div className="text-center py-8">
-                <div className="loading-more">Loading more...</div>
+                <div className="loading-more">Loading more fonts...</div>
               </div>
             )}
             
             {/* This div serves as a sentinel for the infinite scroll */}
-            <div ref={loadMoreRef} className="h-10" />
+            <div 
+              ref={lastBlockElementRef} 
+              className="h-40 mb-10 w-full text-center"
+              style={{ opacity: hasMore ? 1 : 0 }}
+            >
+              {hasMore && !loadingMore && (
+                <div className="text-sm text-gray-400 py-4">
+                  Scroll for more fonts...
+                </div>
+              )}
+              {!hasMore && (
+                <div className="text-sm text-gray-400 py-4">
+                  You've reached the end of the collection!
+                </div>
+              )}
+            </div>
             
             {/* Footer */}
             <div className="mt-12 pt-4 border-t text-center text-sm text-gray-600">

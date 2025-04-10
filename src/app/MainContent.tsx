@@ -259,6 +259,7 @@ export default function MainContent() {
           <p className="text-base text-gray-700" style={{ marginBottom: '2em' }}>
             A growing collection of fonts discovered on the street, in the wild and everywhere in between.<br />
             Add your own finds via the <a href="https://www.are.na/benjamin-ikoma/found-fonts-foundry" target='_blank' rel='noopener noreferrer' className='underline'>Are.na channel</a>.
+            <br /><br />A project initiated by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" style={{ color: 'black', textDecoration: 'underline' }}>Benjamin Ikoma</a>
           </p>
         </header>
 
@@ -321,19 +322,6 @@ export default function MainContent() {
         {/* Footer */}
       </div>
       
-      {/* Fixed footer */}
-      <div style={{ 
-        position: 'fixed',
-        zIndex: 100,
-        bottom: '1em',
-        right: '1em',
-        color: 'white',
-        mixBlendMode: 'difference'
-      }}>
-        <p>
-          A project by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>Benjamin Ikoma</a>
-        </p>
-      </div>
     </main>
   );
 } 

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { alteHaasGrotesk } from './fonts';
 import SchemaMarkup from './components/SchemaMarkup';
 
 export const metadata: Metadata = {
@@ -60,8 +59,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={alteHaasGrotesk.variable}>
-      <body className={`antialiased ${alteHaasGrotesk.className}`}>
+    <html lang="en">
+      <body className="antialiased">
         {children}
         <SchemaMarkup />
       </body>

@@ -65,6 +65,52 @@ a:hover {
   z-index: 10;
 }
 
+/* Loading indicator */
+.loading-indicator {
+  position: relative;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 1em 0;
+}
+
+.loading-indicator::after {
+  content: '...';
+  display: inline-block;
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+/* Pagination styles */
+.pagination {
+  width: 100%;
+}
+
+.pagination-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: white;
+  padding: 0.5em 1.5em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.9em;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .text-5em {
@@ -94,6 +140,15 @@ a:hover {
   .responsive-container {
     margin-left: 1em !important;
     margin-right: 1em !important;
+  }
+  
+  .pagination {
+    margin-top: 2em;
+  }
+  
+  .pagination-btn {
+    padding: 0.4em 1em;
+    font-size: 0.9em;
   }
 }
 

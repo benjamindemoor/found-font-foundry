@@ -111,17 +111,20 @@ export default function MainContent({ initialPage }: MainContentProps) {
       clearTimeout(pageChangeTimeoutRef.current);
     }
     
-    // Reset image states when changing pages
+    // Reset image states when changing pages - this ensures we start fresh
     setImageStates({});
     
     // Set loading first - immediate
     setLoading(true);
     
-    // Then fetch data - after a short delay to ensure loading state is applied
-    fetchData(currentPage);
-    
-    // Update the URL to match the current page
-    updateBrowserUrl(currentPage);
+    // Wait a tiny bit before fetching new data to ensure UI updates
+    setTimeout(() => {
+      // Then fetch data
+      fetchData(currentPage);
+      
+      // Update the URL to match the current page
+      updateBrowserUrl(currentPage);
+    }, 10);
   }, [currentPage]);
 
   // Add effect to scroll to top when page changes - immediate scroll
@@ -412,10 +415,10 @@ export default function MainContent({ initialPage }: MainContentProps) {
     // Set blocks after all other state is set
     setBlocks(contents);
     
-    // Minor delay to ensure smooth transition
+    // Minor delay to ensure smooth transition - improved timing to allow images to begin loading
     pageChangeTimeoutRef.current = setTimeout(() => {
       setLoading(false);
-    }, 800);
+    }, 400); // Reduced from 800ms to 400ms for faster page transitions
   };
 
   // Helper to navigate to the previous page
@@ -425,6 +428,11 @@ export default function MainContent({ initialPage }: MainContentProps) {
       if (pageChangeTimeoutRef.current) {
         clearTimeout(pageChangeTimeoutRef.current);
       }
+      
+      // Force clear any existing loaded images before navigating
+      document.querySelectorAll('.image-fade').forEach(img => {
+        img.classList.remove('loaded');
+      });
       
       // Update page immediately
       const newPage = currentPage - 1;
@@ -439,6 +447,11 @@ export default function MainContent({ initialPage }: MainContentProps) {
       if (pageChangeTimeoutRef.current) {
         clearTimeout(pageChangeTimeoutRef.current);
       }
+      
+      // Force clear any existing loaded images before navigating
+      document.querySelectorAll('.image-fade').forEach(img => {
+        img.classList.remove('loaded');
+      });
       
       // Update page immediately 
       const newPage = currentPage + 1;
@@ -461,18 +474,17 @@ export default function MainContent({ initialPage }: MainContentProps) {
   const handleImageLoad = (blockId: string, e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     
-    // Small timeout to ensure the transition is smooth
-    setTimeout(() => {
-      setImageStates(prev => ({
-        ...prev,
-        [blockId]: {
-          ...prev[blockId],
-          loaded: true,
-          width: img.naturalWidth,
-          height: img.naturalHeight
-        }
-      }));
-    }, 50); // Small delay for smoother transition
+    // Mark image as loaded immediately without timeout
+    // The CSS transition will handle the smooth fade-in
+    setImageStates(prev => ({
+      ...prev,
+      [blockId]: {
+        ...prev[blockId],
+        loaded: true,
+        width: img.naturalWidth,
+        height: img.naturalHeight
+      }
+    }));
   };
 
   // Function to update browser URL without causing navigation

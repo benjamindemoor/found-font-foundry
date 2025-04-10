@@ -1,3 +1,6 @@
+// This file is temporarily disabled to prevent build failures on Netlify
+// When the type conflict with Netlify is resolved, rename this file back to page.tsx
+
 // This is a Server Component
 import { Suspense } from 'react';
 import ClientPage from '../../ClientPage';

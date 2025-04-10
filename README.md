@@ -1,10 +1,10 @@
-# Found Font Foundry
+# Found Fonts Foundry
 
 A growing collection of fonts discovered on the street, in the wild and everywhere in between.
 
 ## Project Overview
 
-Found Font Foundry is a curated collection of typographic specimens found in the real world. The project uses [Are.na](https://www.are.na/benjamin-ikoma/found-font-foundry) as a content management system and displays the images in a responsive gallery.
+Found Fonts Foundry is a curated collection of typographic specimens found in the real world. The project uses [Are.na](https://www.are.na/benjamin-ikoma/found-fonts-foundry) as a content management system and displays the images in a responsive gallery.
 
 ## Technologies Used
 
@@ -61,13 +61,13 @@ This application can also be deployed to:
 
 ## API Usage
 
-This project uses the Are.na API to fetch content from the [Found Font Foundry](https://www.are.na/benjamin-ikoma/found-font-foundry) channel.
+This project uses the Are.na API to fetch content from the [Found Fonts Foundry](https://www.are.na/benjamin-ikoma/found-fonts-foundry) channel.
 
 ## Contributing
 
 To contribute to this project:
 
-1. Add your font discoveries to the [Are.na channel](https://www.are.na/benjamin-ikoma/found-font-foundry)
+1. Add your font discoveries to the [Are.na channel](https://www.are.na/benjamin-ikoma/found-fonts-foundry)
 2. For code contributions, please submit a pull request
 
 ## License
@@ -76,7 +76,7 @@ This project is maintained by [Benjamin Ikoma](http://benjaminikoma.be/).
 
 ## About
 
-Found Font Foundry is a curated collection of fonts spotted in the real world. This project showcases these found typographic specimens and allows others to contribute their discoveries via Are.na.
+Found Fonts Foundry is a curated collection of fonts spotted in the real world. This project showcases these found typographic specimens and allows others to contribute their discoveries via Are.na.
 
 ## Features
 
@@ -96,8 +96,8 @@ Found Font Foundry is a curated collection of fonts spotted in the real world. T
 
 1. Clone the repository
 ```bash
-git clone https://github.com/benjamindemoor/found-font-foundry.git
-cd found-font-foundry
+git clone https://github.com/benjamindemoor/found-fonts-foundry.git
+cd found-fonts-foundry
 ```
 
 2. Install dependencies

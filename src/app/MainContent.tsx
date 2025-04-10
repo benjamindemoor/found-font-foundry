@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import axios from 'axios';
 import './image-placeholder.css';
+import './fonts.css';
 import { useRouter } from 'next/navigation';
 
 interface ArenaResponse {
@@ -49,6 +50,9 @@ export default function MainContent({ initialPage }: MainContentProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [perPage] = useState(30); // Updated to show 30 posts per page
   const [totalCount, setTotalCount] = useState(0);
+  
+  // State for randomly selected font
+  const [randomFont, setRandomFont] = useState<string>('Cooper Black');
   
   // Use passed in initialPage value
   const [currentPage, setCurrentPage] = useState(initialPage);
@@ -113,10 +117,34 @@ export default function MainContent({ initialPage }: MainContentProps) {
     }
   }, [loading]);
 
+  // Helper function to get a random font
+  const getRandomFont = () => {
+    // Array of available fonts in the fonts folder (exact font names)
+    const fonts = [
+      'Cooper Black',
+      'Boecklins Universe',
+      'Brush Script',
+      'Davida Bold',
+      'Papyrus',
+      'Comic Sans Bold',
+      'Choc',
+      'Alte Haas Grotesk'
+    ];
+    
+    // Select a random font from the array
+    const randomIndex = Math.floor(Math.random() * fonts.length);
+    return fonts[randomIndex];
+  };
+
+  // Set random font on initial load and when page changes
+  useEffect(() => {
+    setRandomFont(getRandomFont());
+  }, [currentPage]);
+
   const fetchChannelInfo = async () => {
     try {
       // Get channel info to determine total count
-      const channelResponse = await axios.get<ChannelResponse>('https://api.are.na/v2/channels/found-font-foundry');
+      const channelResponse = await axios.get<ChannelResponse>('https://api.are.na/v2/channels/found-fonts-foundry');
       const channelData = channelResponse.data;
       
       if (channelData && typeof channelData.length === 'number') {
@@ -136,7 +164,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
     try {
       setLoading(true);
       // Use pagination parameters as per Arena API docs - page and per
-      const response = await axios.get(`https://api.are.na/v2/channels/found-font-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`);
+      const response = await axios.get(`https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`);
       
       // Extract pagination metadata from response
       const data = response.data as ArenaResponse;
@@ -261,13 +289,13 @@ export default function MainContent({ initialPage }: MainContentProps) {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-6">
+    <main className="min-h-screen bg-white text-black px-4 py-6">
       <div 
-        className={`fixed inset-0 bg-black z-50 flex items-center justify-center ${loading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-white z-50 flex items-center justify-center ${loading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         style={{ transition: loading ? 'none' : 'opacity 300ms' }}
       >
         <div className="text-center">
-          <div className="loading-text">searching...</div>
+          <div className="loading-text text-black">searching...</div>
         </div>
       </div>
       
@@ -281,12 +309,16 @@ export default function MainContent({ initialPage }: MainContentProps) {
         }}
       >
         <header className="mb-12">
-          <h1 className="text-5em font-normal" style={{ marginBottom: '0em', marginTop: 0 }}>
-            Found Font Foundry
+          <h1 className="title" style={{ 
+            marginBottom: '0.1em', 
+            marginTop: 0,
+            fontFamily: `'${randomFont}', sans-serif`
+          }}>
+            Found Fonts Foundry
           </h1>
-          <p className="text-base" style={{ marginBottom: '2em' }}>
+          <p className="text-base text-gray-700" style={{ marginBottom: '2em' }}>
             A growing collection ({totalCount}) of fonts discovered on the street, in the wild and everywhere in between.<br />
-            Add your own finds via our <a href="https://www.are.na/benjamin-ikoma/found-font-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a> channel.
+            Add your own finds via our <a href="https://www.are.na/benjamin-ikoma/found-fonts-foundry" target="_blank" rel="noopener noreferrer" className="underline">Are.na</a> channel.
           </p>
         </header>
 
@@ -325,12 +357,12 @@ export default function MainContent({ initialPage }: MainContentProps) {
                           className="placeholder"
                           style={{
                             paddingBottom: `${(imageState.height / imageState.width) * 100}%`,
-                            backgroundColor: '#333'
+                            backgroundColor: '#f0f0f0'
                           }}
                         />
                       </div>
                     )}
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       submitted by {username} – {date}
                     </p>
                   </div>
@@ -342,7 +374,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
             <div className="pagination">
               <div className="flex flex-col items-center mt-8">
                 <div className="pagination-buttons flex items-center justify-between w-full">
-                  <p className="text-sm text-gray-400" style={{ margin: 0 }}>
+                  <p className="text-sm text-gray-600" style={{ margin: 0 }}>
                     A project by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" className="underline">Benjamin Ikoma</a>
                   </p>
                   <div className="flex items-center gap-6">
@@ -353,7 +385,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
                     >
                       Previous
                     </button>
-                    <span className="pagination-info text-gray-400">
+                    <span className="pagination-info text-gray-600">
                       {currentPage}/{totalPages}
                     </span>
                     <button 

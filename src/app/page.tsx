@@ -6,7 +6,7 @@ import MainContent from './MainContent';
 // Loading fallback component
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+    <div className="min-h-screen bg-white text-black flex items-center justify-center">
       <div className="text-center">
         <div className="loading-text">searching...</div>
       </div>

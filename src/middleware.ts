@@ -5,6 +5,11 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
   
+  // Skip processing for static files
+  if (pathname.startsWith('/fonts/') || pathname.startsWith('/_next/')) {
+    return NextResponse.next();
+  }
+  
   // If URL has the pattern /page/NUMBER, rewrite to /?page=NUMBER
   const pagePathMatch = pathname.match(/^\/page\/(\d+)$/);
   if (pagePathMatch) {

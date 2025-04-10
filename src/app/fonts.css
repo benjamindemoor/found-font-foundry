@@ -1,0 +1,130 @@
+/* Cooper Black */
+@font-face {
+  font-family: 'Cooper Black';
+  src: url('/fonts/Cooper Black Regular.ttf') format('truetype'),
+       url('/fonts/cooper-black.woff2') format('woff2'),
+       url('/fonts/cooper-black.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Boecklins Universe */
+@font-face {
+  font-family: 'Boecklins Universe';
+  src: url('/fonts/Boecklins Universe.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Brush Script */
+@font-face {
+  font-family: 'Brush Script';
+  src: url('/fonts/Brush Script.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Davida Bold */
+@font-face {
+  font-family: 'Davida Bold';
+  src: url('/fonts/Davida Bold BT.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Jackson */
+@font-face {
+  font-family: 'Jackson';
+  src: url('/fonts/jackson-mn.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Papyrus */
+@font-face {
+  font-family: 'Papyrus';
+  src: url('/fonts/Papyrus.ttc') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Comic Sans Bold */
+@font-face {
+  font-family: 'Comic Sans Bold';
+  src: url('/fonts/Comic Sans MS Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Choc */
+@font-face {
+  font-family: 'Choc';
+  src: url('/fonts/choc.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Alte Haas Grotesk */
+@font-face {
+  font-family: 'Alte Haas Grotesk';
+  src: url('/fonts/AlteHaasGroteskRegular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Alte Haas Grotesk';
+  src: url('/fonts/AlteHaasGroteskBold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Hobo */
+@font-face {
+  font-family: 'Hobo';
+  src: url('/fonts/hobo/hobo.woff2') format('woff2'),
+       url('/fonts/hobo/hobo.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Kunstler Script */
+@font-face {
+  font-family: 'Kunstler Script';
+  src: url('/fonts/kunstler/kunstler.woff2') format('woff2'),
+       url('/fonts/kunstler/kunstler.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ITC Benguiat */
+@font-face {
+  font-family: 'ITC Benguiat';
+  src: url('/fonts/benguiat/benguiat.woff2') format('woff2'),
+       url('/fonts/benguiat/benguiat.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bookman */
+@font-face {
+  font-family: 'Bookman';
+  src: url('/fonts/bookman/bookman.woff2') format('woff2'),
+       url('/fonts/bookman/bookman.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+} 

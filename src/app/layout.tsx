@@ -3,7 +3,7 @@ import './globals.css';
 import { alteHaasGrotesk } from './fonts';
 
 export const metadata: Metadata = {
-  title: 'Found Font Foundry',
+  title: 'Found Fonts Foundry',
   description: 'A collection of found fonts in the wild',
 };
 

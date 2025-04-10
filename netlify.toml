@@ -14,4 +14,10 @@
   NEXT_TELEMETRY_DISABLED = "1"
 
 [[plugins]]
-  package = "@netlify/plugin-nextjs" 
+  package = "@netlify/plugin-nextjs"
+
+# Handle clean URLs for pagination
+[[redirects]]
+  from = "/page/*"
+  to = "/.netlify/functions/next"
+  status = 200 

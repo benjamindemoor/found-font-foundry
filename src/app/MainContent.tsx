@@ -65,42 +65,16 @@ export default function MainContent({ initialPage }: MainContentProps) {
   // State for randomly selected font
   const [randomFont, setRandomFont] = useState<string>('Cooper Black');
   
-  // Use passed in initialPage value
-  const [currentPage, setCurrentPage] = useState(initialPage);
+  // Use passed in initialPage value, enforcing a valid number
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = Number(initialPage);
+    return !isNaN(page) && page > 0 ? page : 1;
+  });
   
   // Reference for data freshness
   const lastFetchRef = useRef<number>(0);
   const isFetchingRef = useRef<boolean>(false);
-
-  // Check for query params and convert to clean URLs for the browser display
-  useEffect(() => {
-    // Get the current URL and pathname
-    const url = new URL(window.location.href);
-    const pathname = url.pathname;
-    const pageParam = url.searchParams.get('page');
-    
-    // If we have a page query param, update browser URL to clean format
-    // This doesn't cause a navigation, just updates the address bar
-    if (pathname === '/' && pageParam) {
-      const pageNum = parseInt(pageParam, 10);
-      if (!isNaN(pageNum) && pageNum > 1) {
-        window.history.replaceState(null, '', `/page/${pageNum}`);
-      } else if (!isNaN(pageNum) && pageNum === 1) {
-        window.history.replaceState(null, '', '/');
-      }
-    }
-  }, []);
-
-  // Update URL when page changes to use clean URLs
-  useEffect(() => {
-    if (currentPage === 1) {
-      // Update the browser URL to / but keep current internal URL
-      window.history.replaceState(null, '', '/');
-    } else {
-      // Update the browser URL to /page/X but keep current internal URL
-      window.history.replaceState(null, '', `/page/${currentPage}`);
-    }
-  }, [currentPage]);
+  const pageChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch data on component mount and page changes
   useEffect(() => {
@@ -121,21 +95,41 @@ export default function MainContent({ initialPage }: MainContentProps) {
       }
     }, 60000); // Check every minute
 
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      // Clear any pending timeouts
+      if (pageChangeTimeoutRef.current) {
+        clearTimeout(pageChangeTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Fetch data when page changes
   useEffect(() => {
+    // Clear any existing timeout to prevent race conditions
+    if (pageChangeTimeoutRef.current) {
+      clearTimeout(pageChangeTimeoutRef.current);
+    }
+    
+    // Reset image states when changing pages
+    setImageStates({});
+    
+    // Set loading first - immediate
+    setLoading(true);
+    
+    // Then fetch data - after a short delay to ensure loading state is applied
     fetchData(currentPage);
   }, [currentPage]);
 
   // Add effect to scroll to top when page changes - immediate scroll
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant'
-    });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+    }
   }, [currentPage]);
 
   // Add effect to handle body overflow during loading
@@ -265,13 +259,17 @@ export default function MainContent({ initialPage }: MainContentProps) {
   // Fetch page data with server-side caching
   const fetchData = async (page: number, forceRefresh = false) => {
     try {
-      setLoading(true);
+      console.log(`Fetching data for page ${page}, force refresh: ${forceRefresh}`);
+      // setLoading(true) is now set by the page change effect
       setError(null); // Clear any previous errors
       isFetchingRef.current = true;
       
+      // Create a unique cache key for each page
+      const pageUrl = `https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`;
+      
       // Fetch data with server-side caching
       const responseData = await fetchFromServerWithCache<ArenaResponse>(
-        `https://api.are.na/v2/channels/found-fonts-foundry/contents?page=${page}&per=${perPage}&sort=position&direction=desc`,
+        pageUrl,
         forceRefresh
       );
       
@@ -280,11 +278,13 @@ export default function MainContent({ initialPage }: MainContentProps) {
         throw new Error('Invalid response data received from API');
       }
       
+      console.log(`Received data for page ${page} with ${responseData.contents.length} items`);
+      
       // Process the data
       processArenaData(responseData);
       
     } catch (err: unknown) {
-      console.error('Error fetching data:', err);
+      console.error(`Error fetching data for page ${page}:`, err);
       
       // Extract a user-friendly message from the error
       let errorMessage = 'Failed to load images. Please try again later.';
@@ -316,9 +316,14 @@ export default function MainContent({ initialPage }: MainContentProps) {
       // Fall back to empty content but don't crash the app
       setBlocks([]);
       
+      // Ensure loading is set to false even on error
+      if (pageChangeTimeoutRef.current) {
+        clearTimeout(pageChangeTimeoutRef.current);
+      }
+      setLoading(false);
+      
     } finally {
       isFetchingRef.current = false;
-      setLoading(false);
     }
   };
 
@@ -341,6 +346,17 @@ export default function MainContent({ initialPage }: MainContentProps) {
     console.log(`Processing data: Total items: ${totalItems}, Pages: ${calculatedTotalPages}, Current page: ${currentPage}`);
     
     const contents = data.contents || [];
+    
+    if (contents.length === 0) {
+      console.warn('No contents found for page:', currentPage);
+      
+      // If we're on a page that doesn't exist, go to page 1
+      if (currentPage > 1 && calculatedTotalPages < currentPage) {
+        console.warn('Current page exceeds total pages, redirecting to page 1');
+        setCurrentPage(1);
+        return;
+      }
+    }
     
     // Base offsets: 0%, 10%, 20%, 30%, 40%, 50%
     let offsetValues = [0, 10, 20, 30, 40, 50];
@@ -394,7 +410,7 @@ export default function MainContent({ initialPage }: MainContentProps) {
     setBlocks(contents);
     
     // Minor delay to ensure smooth transition
-    setTimeout(() => {
+    pageChangeTimeoutRef.current = setTimeout(() => {
       setLoading(false);
     }, 800);
   };
@@ -402,22 +418,26 @@ export default function MainContent({ initialPage }: MainContentProps) {
   // Helper to navigate to the previous page
   const handlePrevPage = () => {
     if (currentPage > 1 && !loading) {
-      setLoading(true);
-      // Use a longer delay to ensure loading screen is visible before navigation
-      setTimeout(() => {
-        setCurrentPage(currentPage - 1);
-      }, 200);
+      // Clear any existing timeout
+      if (pageChangeTimeoutRef.current) {
+        clearTimeout(pageChangeTimeoutRef.current);
+      }
+      
+      // Update page immediately
+      setCurrentPage(prevPage => prevPage - 1);
     }
   };
 
   // Helper to navigate to the next page
   const handleNextPage = () => {
     if (currentPage < totalPages && !loading) {
-      setLoading(true);
-      // Use a longer delay to ensure loading screen is visible before navigation
-      setTimeout(() => {
-        setCurrentPage(currentPage + 1);
-      }, 200);
+      // Clear any existing timeout
+      if (pageChangeTimeoutRef.current) {
+        clearTimeout(pageChangeTimeoutRef.current);
+      }
+      
+      // Update page immediately 
+      setCurrentPage(prevPage => prevPage + 1);
     }
   };
 

@@ -12,12 +12,12 @@
   top: 0;
   left: 0;
   z-index: 1;
-  transition: opacity 0.5s ease-out;
+  transition: opacity 0.8s ease;
 }
 
 .image-fade {
   opacity: 0;
-  transition: opacity 0.5s ease-in;
+  transition: opacity 0.8s ease;
   position: relative;
   z-index: 2;
 }

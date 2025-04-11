@@ -279,6 +279,7 @@ export default function MainContent() {
             {blocks.map((block, index) => {
               const offset = offsets[block.id]?.offset || 0;
               const username = block.user?.username || 'anonymous';
+              const userSlug = block.user?.slug || username;
               const date = formatDate(block.updated_at);
               const isLastBlock = index === blocks.length - 1;
               
@@ -304,7 +305,7 @@ export default function MainContent() {
                     </div>
                   )}
                   <p className="text-sm text-gray-600 mt-1">
-                    via <a href={`https://www.are.na/user/${slug}`} target='_blank' rel='noopener noreferrer' className='underline'>{username}</a> – {date}
+                    via <a href={`https://www.are.na/${userSlug}`} target='_blank' rel='noopener noreferrer' className='underline'>{username}</a> – {date}
                   </p>
                 </div>
               );

@@ -257,8 +257,8 @@ export default function MainContent() {
             Found Fonts Foundry
           </h1>
           <p className="text-base text-gray-700" style={{ marginBottom: '2em' }}>
-            A growing collection of fonts discovered on the street, in the wild and everywhere in between.<br />
-            Add your own finds via the <a href="https://www.are.na/benjamin-ikoma/found-fonts-foundry" target='_blank' rel='noopener noreferrer' className='underline'>Are.na channel</a>.
+            A growing collection of type found on the street, in the wild and everywhere in between.<br />
+            Add your own finds via the <a href="https://www.are.na/benjamin-ikoma/found-fonts-foundry" target='_blank' rel='noopener noreferrer' className='underline'>Are.na channel</a>. 
             <br /><br />A project initiated by <a href="http://benjaminikoma.be/" target="_blank" rel="noopener noreferrer" style={{ color: 'black', textDecoration: 'underline' }}>Benjamin Ikoma</a>
           </p>
         </header>
@@ -304,7 +304,7 @@ export default function MainContent() {
                     </div>
                   )}
                   <p className="text-sm text-gray-600 mt-1">
-                    submitted by {username} – {date}
+                    via <a href={`https://www.are.na/user/${username}`} target='_blank' rel='noopener noreferrer' className='underline'>{username}</a> – {date}
                   </p>
                 </div>
               );

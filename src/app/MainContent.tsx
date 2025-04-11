@@ -304,7 +304,7 @@ export default function MainContent() {
                     </div>
                   )}
                   <p className="text-sm text-gray-600 mt-1">
-                    via <a href={`https://www.are.na/user/${username}`} target='_blank' rel='noopener noreferrer' className='underline'>{username}</a> – {date}
+                    via <a href={`https://www.are.na/user/${slug}`} target='_blank' rel='noopener noreferrer' className='underline'>{username}</a> – {date}
                   </p>
                 </div>
               );

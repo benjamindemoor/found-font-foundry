@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import SchemaMarkup from './components/SchemaMarkup';
+import Analytics from './components/Analytics';
 
 export const metadata: Metadata = {
   title: 'Found Fonts Foundry',
@@ -63,6 +64,7 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <SchemaMarkup />
+        <Analytics />
       </body>
     </html>
   );
